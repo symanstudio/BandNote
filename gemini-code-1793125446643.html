@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Band Note Identification Challenge</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #f0f9ff;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Fredoka', cursive;
+    }
+    .note-option-btn {
+      transition: all 0.15s ease-in-out;
+    }
+    .note-option-btn:hover {
+      transform: translateY(-2px);
+    }
+    .note-option-btn:active {
+      transform: translateY(1px);
+    }
+    @keyframes subtlePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .animate-celebrate {
+      animation: subtlePulse 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 p-4 sm:p-6 flex flex-col justify-center">
+
+  <div class="max-w-3xl mx-auto w-full bg-white rounded-3xl shadow-xl border-4 border-sky-200 overflow-hidden">
+    
+    <!-- APP HEADER (VISIBLE ON INTRO PAGE, HIDDEN IN PLAY MODE) -->
+    <header id="appHeader" class="bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 p-6 text-white text-center">
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-wide drop-shadow-md">🎺 Band Note Challenge 🎷</h1>
+      <p class="text-sky-100 mt-1 text-sm sm:text-base font-semibold">Master your notes & level up your playing!</p>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="p-6">
+
+      <!-- STEP 1: STUDENT INFO & SETUP SCREEN -->
+      <section id="step1-section" class="space-y-5">
+        <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-5 shadow-sm">
+          <label class="block font-heading text-lg font-bold text-sky-900 mb-2">1. Student School Email Address:</label>
+          <div class="flex gap-2">
+            <input 
+              type="email" 
+              id="studentEmail" 
+              name="email" 
+              autocomplete="email" 
+              placeholder="smithj@hudsonraiders.org" 
+              class="w-full text-lg p-3 rounded-xl border-2 border-sky-300 focus:outline-none focus:border-blue-500 transition bg-white" 
+              oninput="checkSetupReady()"
+            >
+            <button type="button" onclick="appendDomain()" class="px-4 bg-sky-200 hover:bg-sky-300 text-sky-900 font-bold rounded-xl whitespace-nowrap text-sm border border-sky-300 transition">
+              + @hudsonraiders.org
+            </button>
+          </div>
+          <p id="emailValidationMsg" class="text-xs text-amber-700 font-bold mt-1.5 hidden">⚠️ Please enter a valid email address (e.g., smithj@hudsonraiders.org)</p>
+          <p class="text-xs text-sky-700 mt-1">💡 Chromebook Tip: Tap the box once to select your school email address.</p>
+        </div>
+
+        <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-5 shadow-sm">
+          <label class="block font-heading text-lg font-bold text-sky-900 mb-2">2. Pick your instrument:</label>
+          <select id="instrumentSelect" onchange="checkSetupReady()" class="w-full text-lg p-3 rounded-xl border-2 border-sky-300 focus:outline-none focus:border-blue-500 transition bg-white font-semibold">
+            <option value="">-- Choose Instrument --</option>
+            <option value="Flute">Flute</option>
+            <option value="Clarinet">Clarinet</option>
+            <option value="AltoSax">Alto Saxophone</option>
+            <option value="Trumpet">Trumpet</option>
+            <option value="FrenchHorn">French Horn</option>
+            <option value="Trombone">Trombone / Euphonium</option>
+            <option value="Tuba">Tuba</option>
+            <option value="Mallets">Mallet Percussion</option>
+          </select>
+        </div>
+
+        <!-- LEVEL SELECTOR (LEVELS 1-4) -->
+        <div id="levelSelectContainer" class="hidden space-y-3">
+          <label class="block font-heading text-lg font-bold text-sky-900">3. Select Difficulty Level:</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <button id="btnLvl1" onclick="selectLevel(1)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-100 text-green-800 hover:bg-green-200 transition shadow-sm">
+              ⭐ Level 1
+            </button>
+            <button id="btnLvl2" onclick="selectLevel(2)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed" disabled>
+              🔒 Level 2
+            </button>
+            <button id="btnLvl3" onclick="selectLevel(3)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed" disabled>
+              🔒 Level 3
+            </button>
+            <button id="btnLvl4" onclick="selectLevel(4)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed" disabled>
+              🔒 Level 4
+            </button>
+          </div>
+          <div id="levelDescription" class="text-xs sm:text-sm text-slate-600 bg-white p-3 rounded-xl border border-sky-200 font-semibold shadow-inner"></div>
+        </div>
+
+        <button id="startBtn" onclick="startQuiz()" disabled class="w-full py-4 bg-slate-300 text-slate-500 font-heading text-xl rounded-2xl cursor-not-allowed transition">
+          Enter Valid Email & Select Instrument to Start
+        </button>
+      </section>
+
+      <!-- STEP 2: QUIZ INTERFACE -->
+      <section id="quiz-section" class="hidden space-y-5">
+        
+        <!-- TOP STATUS BAR WITH INSTRUMENT & RUNNING ACCURACY SCORE (%) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 text-center">
+          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Instrument</span>
+            <span id="activeInstBadge" class="font-heading text-base sm:text-lg font-bold text-slate-700 truncate block">Flute</span>
+          </div>
+          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Question</span>
+            <span id="questionNum" class="font-heading text-base sm:text-lg font-bold text-blue-600">1 / 15</span>
+          </div>
+          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Running Score</span>
+            <span id="scoreDisplay" class="font-heading text-base sm:text-lg font-bold text-green-600">100%</span>
+          </div>
+          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Level</span>
+            <span id="activeLevelBadge" class="font-heading text-base sm:text-lg font-bold text-indigo-600">Level 1</span>
+          </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+          <div id="progressBarFill" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%;"></div>
+        </div>
+
+        <!-- MAIN STAFF DISPLAY BOX (DYNAMIC BG/BORDER & FEEDBACK TEXT ABOVE STAFF) -->
+        <div id="staffContainer" class="bg-white border-4 border-sky-200 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300">
+          <div id="feedbackText" class="h-8 font-heading text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1"></div>
+          <svg id="staffSvg" width="380" height="260" viewBox="0 -40 380 260" class="overflow-visible"></svg>
+        </div>
+
+        <!-- MULTIPLE CHOICE BUTTONS (8 ALPHABETICAL OPTIONS) -->
+        <div id="optionsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <!-- Options injected dynamically -->
+        </div>
+      </section>
+
+      <!-- STEP 3: RESULTS SUMMARY -->
+      <section id="results-section" class="hidden text-center space-y-6 py-4">
+        <div class="space-y-2">
+          <h2 id="resultsTitle" class="text-3xl font-bold font-heading text-slate-800">Round Complete! 🎉</h2>
+          <p id="resultsSubtext" class="text-slate-600 font-semibold text-lg">Here is how you performed:</p>
+        </div>
+
+        <div id="resultsCard" class="bg-sky-50 border-4 border-sky-200 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-inner transition-all duration-300">
+          <div id="resultsBadge" class="text-4xl"></div>
+          <div class="text-5xl font-heading font-bold text-blue-600" id="finalPercent">100%</div>
+          <div class="text-slate-600 font-bold text-lg" id="finalFraction">15 out of 15 correct</div>
+          <div id="unlockMessage" class="text-green-600 font-bold font-heading text-lg pt-2 hidden"></div>
+        </div>
+
+        <!-- STRICT ACTION BUTTONS CONTAINER -->
+        <div class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+          <!-- TRY AGAIN (ONLY SHOWN IF FAILED) -->
+          <button id="restartBtn" onclick="restartRound()" class="hidden flex-1 py-4 bg-blue-500 hover:bg-blue-600 text-white font-heading text-xl rounded-2xl shadow-lg transition">
+            🔄 Try Again
+          </button>
+          
+          <!-- ADVANCE LEVEL (ONLY SHOWN IF PASSED L1, L2, L3) -->
+          <button id="nextLevelBtn" onclick="nextLevel()" class="hidden flex-1 py-4 bg-green-500 hover:bg-green-600 text-white font-heading text-xl rounded-2xl shadow-lg transition">
+            🚀 Advance to Next Level
+          </button>
+
+          <!-- START OVER FROM BEGINNING (ONLY SHOWN IF PASSED LEVEL 4) -->
+          <button id="startOverBtn" onclick="startOverFromBeginning()" class="hidden flex-1 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-heading text-xl rounded-2xl shadow-xl transition transform hover:scale-105">
+            👑 Start Over from Level 1
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- APP LOGIC SCRIPT -->
+  <script>
+    const DEFAULT_SCHOOL_DOMAIN = "@hudsonraiders.org";
+    const TOTAL_QUESTIONS = 15;
+
+    // HARDCODED GOOGLE FORM CONFIGURATION
+    const DEFAULT_FORM_CONFIG = {
+      formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSe5gQZk6fn6Wapf5B7nxIMyrFStRSIW74Hini-61GxKV3DUjg/formResponse",
+      entryName: "entry.1848316150",
+      entryInst: "entry.1753074477",
+      entryLevel: "entry.292060224",
+      entryScore: "entry.255615403"
+    };
+
+    // MUSIC ENGINE DATA
+    const NOTE_LIBRARY = {
+      "F1":   { name: "F1",   display: "F",  letter: "F", alt: null, step: -18 },
+      "G1":   { name: "G1",   display: "G",  letter: "G", alt: null, step: -17 },
+      "Ab1":  { name: "Ab1",  display: "A♭", letter: "A", alt: "b",  step: -16 },
+      "A1":   { name: "A1",   display: "A",  letter: "A", alt: null, step: -16 },
+      "Bb1":  { name: "Bb1",  display: "B♭", letter: "B", alt: "b",  step: -15 },
+      "B1":   { name: "B1",   display: "B",  letter: "B", alt: null, step: -15 },
+      "C2":   { name: "C2",   display: "C",  letter: "C", alt: null, step: -14 },
+      "D2":   { name: "D2",   display: "D",  letter: "D", alt: null, step: -13 },
+      "Eb2":  { name: "Eb2",  display: "E♭", letter: "E", alt: "b",  step: -12 },
+      "E2":   { name: "E2",   display: "E",  letter: "E", alt: null, step: -12 },
+      "F2":   { name: "F2",   display: "F",  letter: "F", alt: null, step: -11 },
+      "F#2":  { name: "F#2",  display: "F♯", letter: "F", alt: "#",  step: -11 },
+      "G2":   { name: "G2",   display: "G",  letter: "G", alt: null, step: -10 },
+      "Ab2":  { name: "Ab2",  display: "A♭", letter: "A", alt: "b",  step: -9 },
+      "A2":   { name: "A2",   display: "A",  letter: "A", alt: null, step: -9 },
+      "Bb2":  { name: "Bb2",  display: "B♭", letter: "B", alt: "b",  step: -8 },
+      "B2":   { name: "B2",   display: "B",  letter: "B", alt: null, step: -8 },
+      "C3":   { name: "C3",   display: "C",  letter: "C", alt: null, step: -7 },
+      "C#3":  { name: "C#3",  display: "C♯", letter: "C", alt: "#",  step: -7 },
+      "D3":   { name: "D3",   display: "D",  letter: "D", alt: null, step: -6 },
+      "Eb3":  { name: "Eb3",  display: "E♭", letter: "E", alt: "b",  step: -5 },
+      "E3":   { name: "E3",   display: "E",  letter: "E", alt: null, step: -5 },
+      "F3":   { name: "F3",   display: "F",  letter: "F", alt: null, step: -4 },
+      "F#3":  { name: "F#3",  display: "F♯", letter: "F", alt: "#",  step: -4 },
+      "G3":   { name: "G3",   display: "G",  letter: "G", alt: null, step: -3 },
+      "G#3":  { name: "G#3",  display: "G♯", letter: "G", alt: "#",  step: -3 },
+      "Ab3":  { name: "Ab3",  display: "A♭", letter: "A", alt: "b",  step: -2 },
+      "A3":   { name: "A3",   display: "A",  letter: "A", alt: null, step: -2 },
+      "Bb3":  { name: "Bb3",  display: "B♭", letter: "B", alt: "b",  step: -1 },
+      "B3":   { name: "B3",   display: "B",  letter: "B", alt: null, step: -1 },
+      "C4":   { name: "C4",   display: "C",  letter: "C", alt: null, step: 0 },
+      "C#4":  { name: "C#4",  display: "C♯", letter: "C", alt: "#",  step: 0 },
+      "Db4":  { name: "Db4",  display: "D♭", letter: "D", alt: "b",  step: 1 },
+      "D4":   { name: "D4",   display: "D",  letter: "D", alt: null, step: 1 },
+      "D#4":  { name: "D#4",  display: "D♯", letter: "D", alt: "#",  step: 1 },
+      "Eb4":  { name: "Eb4",  display: "E♭", letter: "E", alt: "b",  step: 2 },
+      "E4":   { name: "E4",   display: "E",  letter: "E", alt: null, step: 2 },
+      "F4":   { name: "F4",   display: "F",  letter: "F", alt: null, step: 3 },
+      "F#4":  { name: "F#4",  display: "F♯", letter: "F", alt: "#",  step: 3 },
+      "G4":   { name: "G4",   display: "G",  letter: "G", alt: null, step: 4 },
+      "G#4":  { name: "G#4",  display: "G♯", letter: "G", alt: "#",  step: 4 },
+      "Ab4":  { name: "Ab4",  display: "A♭", letter: "A", alt: "b",  step: 5 },
+      "A4":   { name: "A4",   display: "A",  letter: "A", alt: null, step: 5 },
+      "Bb4":  { name: "Bb4",  display: "B♭", letter: "B", alt: "b",  step: 6 },
+      "B4":   { name: "B4",   display: "B",  letter: "B", alt: null, step: 6 },
+      "C5":   { name: "C5",   display: "C",  letter: "C", alt: null, step: 7 },
+      "C#5":  { name: "C#5",  display: "C♯", letter: "C", alt: "#",  step: 7 },
+      "D5":   { name: "D5",   display: "D",  letter: "D", alt: null, step: 8 },
+      "Eb5":  { name: "Eb5",  display: "E♭", letter: "E", alt: "b",  step: 9 },
+      "E5":   { name: "E5",   display: "E",  letter: "E", alt: null, step: 9 },
+      "F5":   { name: "F5",   display: "F",  letter: "F", alt: null, step: 10 },
+      "F#5":  { name: "F#5",  display: "F♯", letter: "F", alt: "#",  step: 10 },
+      "G5":   { name: "G5",   display: "G",  letter: "G", alt: null, step: 11 },
+      "Ab5":  { name: "Ab5",  display: "A♭", letter: "A", alt: "b",  step: 12 },
+      "A5":   { name: "A5",   display: "A",  letter: "A", alt: null, step: 12 },
+      "Bb5":  { name: "Bb5",  display: "B♭", letter: "B", alt: "b",  step: 13 },
+      "B5":   { name: "B5",   display: "B",  letter: "B", alt: null, step: 13 },
+      "C6":   { name: "C6",   display: "C",  letter: "C", alt: null, step: 14 },
+      "C#6":  { name: "C#6",  display: "C♯", letter: "C", alt: "#",  step: 14 },
+      "D6":   { name: "D6",   display: "D",  letter: "D", alt: null, step: 15 },
+      "Eb6":  { name: "Eb6",  display: "E♭", letter: "E", alt: "b",  step: 16 },
+      "E6":   { name: "E6",   display: "E",  letter: "E", alt: null, step: 16 },
+      "F6":   { name: "F6",   display: "F",  letter: "F", alt: null, step: 17 }
+    };
+
+    const KEY_SIGNATURE_MAP = {
+      "C_INST":   { 0: "none", 1: "1b", 2: "2b", 3: "3b" },
+      "Bb_INST":  { 0: "1#",   1: "none", 2: "1b", 3: "2b" },
+      "Eb_INST":  { 0: "2#",   1: "1#", 2: "none", 3: "1b" },
+      "F_INST":   { 0: "1#",   1: "none", 2: "1b", 3: "2b" }
+    };
+
+    const INSTRUMENTS = {
+      "Flute": {
+        clef: "treble",
+        family: "C_INST",
+        1: ["Bb4", "C5", "D5", "Eb5", "F5"],
+        2: ["Ab4", "A4", "Bb4", "C5", "D5", "Eb5", "E5", "F5", "G5", "Ab5", "A5", "Bb5"],
+        3: ["Ab4", "A4", "Bb4", "C5", "D5", "Eb5", "E5", "F5", "G5", "Ab5", "A5", "Bb5"],
+        4: ["G4", "G#4", "Ab4", "A4", "Bb4", "B4", "C5", "C#5", "D5", "Eb5", "E5", "F5", "F#5", "G5", "Ab5", "A5", "Bb5", "B5", "C6", "D6", "Eb6", "E6", "F6"]
+      },
+      "Clarinet": {
+        clef: "treble",
+        family: "Bb_INST",
+        1: ["C4", "D4", "E4", "F4", "G4"],
+        2: ["Bb3", "B3", "C4", "D4", "E4", "F4", "F#4", "G4", "A4", "Bb3", "B4", "C5"],
+        3: ["Bb3", "B3", "C4", "D4", "E4", "F4", "F#4", "G4", "A4", "Bb3", "B4", "C5"],
+        4: ["G3", "G#3", "A3", "Bb3", "B3", "C4", "D4", "E4", "F4", "F#4", "G4", "A4", "Bb3", "B4", "C5", "D5", "Eb5", "E5", "F5"]
+      },
+      "AltoSax": {
+        clef: "treble",
+        family: "Eb_INST",
+        1: ["G4", "A4", "B4", "C5", "D5"],
+        2: ["F4", "F#4", "G4", "A4", "B4", "C5", "C#5", "D5", "E5", "F5", "F#5", "G5"],
+        3: ["F4", "F#4", "G4", "A4", "B4", "C5", "C#5", "D5", "E5", "F5", "F#5", "G5"],
+        4: ["D4", "D#4", "E4", "F4", "F#4", "G4", "A4", "B4", "C5", "C#5", "D5", "E5", "F5", "F#5", "G5", "A5", "Bb5", "C6"]
+      },
+      "Trumpet": {
+        clef: "treble",
+        family: "Bb_INST",
+        1: ["C4", "D4", "E4", "F4", "G4"],
+        2: ["Bb3", "B3", "C4", "D4", "E4", "F4", "F#4", "G4", "A4", "Bb3", "B4", "C5"],
+        3: ["Bb3", "B3", "C4", "D4", "E4", "F4", "F#4", "G4", "A4", "Bb3", "B4", "C5"],
+        4: ["G3", "G#3", "A3", "Bb3", "B3", "C4", "D4", "E4", "F4", "F#4", "G4", "A4", "Bb3", "B4", "C5", "D5", "Eb5", "E5", "F5"]
+      },
+      "FrenchHorn": {
+        clef: "treble",
+        family: "F_INST",
+        1: ["F4", "G4", "A4", "Bb4", "C5"],
+        2: ["Eb4", "E4", "F4", "G4", "A4", "Bb4", "B4", "C5", "D5", "Eb5", "E5", "F5"],
+        3: ["Eb4", "E4", "F4", "G4", "A4", "Bb4", "B4", "C5", "D5", "Eb5", "E5", "F5"],
+        4: ["C4", "C#4", "D4", "Eb4", "E4", "F4", "G4", "A4", "Bb4", "B4", "C5", "D5", "Eb5", "E5", "F5", "G5", "Ab5", "A5"]
+      },
+      "Trombone": {
+        clef: "bass",
+        family: "C_INST",
+        1: ["Bb2", "C3", "D3", "Eb3", "F3"],
+        2: ["Ab2", "A2", "Bb2", "C3", "D3", "Eb3", "E3", "F3", "G3", "Ab3", "A3", "Bb3"],
+        3: ["Ab2", "A2", "Bb2", "C3", "D3", "Eb3", "E3", "F3", "G3", "Ab3", "A3", "Bb3"],
+        4: ["F2", "F#2", "G2", "Ab2", "A2", "Bb2", "C3", "D3", "Eb3", "E3", "F3", "G3", "Ab3", "A3", "Bb3", "C4", "D4", "Eb4"]
+      },
+      "Tuba": {
+        clef: "bass",
+        family: "C_INST",
+        1: ["Bb1", "C2", "D2", "Eb2", "F2"],
+        2: ["Ab1", "A1", "Bb1", "C2", "D2", "Eb2", "E2", "F2", "G2", "Ab1", "A2", "Bb2"],
+        3: ["Ab1", "A1", "Bb1", "C2", "D2", "Eb2", "E2", "F2", "G2", "Ab1", "A2", "Bb2"],
+        4: ["F1", "G1", "Ab1", "A1", "Bb1", "C2", "D2", "Eb2", "E2", "F2", "G2", "Ab2", "A2", "Bb2", "C3", "D3", "Eb3"]
+      },
+      "Mallets": {
+        clef: "treble",
+        family: "C_INST",
+        1: ["Bb4", "C5", "D5", "Eb5", "F5"],
+        2: ["Ab4", "A4", "Bb4", "C5", "D5", "Eb5", "E5", "F5", "G5", "Ab5", "A5", "Bb5"],
+        3: ["Ab4", "A4", "Bb4", "C5", "D5", "Eb5", "E5", "F5", "G5", "Ab5", "A5", "Bb5"],
+        4: ["F4", "F#4", "G4", "Ab4", "A4", "Bb4", "C5", "D5", "Eb5", "E5", "F5", "G5", "Ab5", "A5", "Bb5", "C6", "D6", "Eb6"]
+      }
+    };
+
+    const LEVEL_DESCRIPTIONS = {
+      1: "Level 1: Core 5 Beginner Notes (Bb, C, D, Eb, F concert equivalent). No key signatures.",
+      2: "Level 2: Extended Octave Range. No key signatures.",
+      3: "Level 3: Key Signatures ONLY (0–3 Concert Flats). No accidental symbols next to noteheads.",
+      4: "Level 4: Extended Range with Key Signatures & Accidentals mixed together."
+    };
+
+    let currentLevel = 1;
+    let maxUnlockedLevel = 1;
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let questions = [];
+    let currentNoteObj = null;
+    let currentKeySig = "none";
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedEmail = localStorage.getItem("bandStudentEmail");
+      const savedInst = localStorage.getItem("bandStudentInst");
+      if (savedEmail) document.getElementById("studentEmail").value = savedEmail;
+      if (savedInst) document.getElementById("instrumentSelect").value = savedInst;
+      checkSetupReady();
+    });
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function appendDomain() {
+      const emailInput = document.getElementById("studentEmail");
+      let val = emailInput.value.trim();
+      if (!val.includes("@")) {
+        emailInput.value = val + DEFAULT_SCHOOL_DOMAIN;
+      }
+      checkSetupReady();
+    }
+
+    function checkSetupReady() {
+      const email = document.getElementById("studentEmail").value.trim();
+      const inst = document.getElementById("instrumentSelect").value;
+      const levelContainer = document.getElementById("levelSelectContainer");
+      const startBtn = document.getElementById("startBtn");
+      const msg = document.getElementById("emailValidationMsg");
+
+      const emailValid = isValidEmail(email);
+
+      if (email.length > 0 && !emailValid) {
+        msg.classList.remove("hidden");
+      } else {
+        msg.classList.add("hidden");
+      }
+
+      if (emailValid && inst !== "") {
+        localStorage.setItem("bandStudentEmail", email);
+        localStorage.setItem("bandStudentInst", inst);
+
+        levelContainer.classList.remove("hidden");
+        startBtn.disabled = false;
+        startBtn.classList.remove("bg-slate-300", "text-slate-500", "cursor-not-allowed");
+        startBtn.classList.add("bg-green-500", "hover:bg-green-600", "text-white", "shadow-lg");
+        startBtn.innerText = `🚀 Start Level ${currentLevel} Challenge`;
+        updateLevelDescription();
+      } else {
+        levelContainer.classList.add("hidden");
+        startBtn.disabled = true;
+        startBtn.classList.add("bg-slate-300", "text-slate-500", "cursor-not-allowed");
+        startBtn.classList.remove("bg-green-500", "hover:bg-green-600", "text-white", "shadow-lg");
+        startBtn.innerText = "Enter Valid Email & Select Instrument to Start";
+      }
+    }
+
+    function selectLevel(lvl) {
+      if (lvl > maxUnlockedLevel) return;
+      currentLevel = lvl;
+
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`btnLvl${i}`);
+        if (i === currentLevel) {
+          btn.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-blue-500 bg-blue-100 text-blue-900 shadow-md";
+        } else if (i <= maxUnlockedLevel) {
+          btn.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-50 text-green-800 hover:bg-green-100";
+        }
+      }
+      updateLevelDescription();
+      checkSetupReady();
+    }
+
+    function updateLevelDescription() {
+      document.getElementById("levelDescription").innerText = LEVEL_DESCRIPTIONS[currentLevel];
+    }
+
+    function startQuiz() {
+      document.getElementById("appHeader").classList.add("hidden");
+      document.getElementById("step1-section").classList.add("hidden");
+      document.getElementById("quiz-section").classList.remove("hidden");
+      document.getElementById("results-section").classList.add("hidden");
+
+      const instSelect = document.getElementById("instrumentSelect");
+      const instLabel = instSelect.options[instSelect.selectedIndex].text.split('/')[0].trim();
+      document.getElementById("activeInstBadge").innerText = instLabel;
+      document.getElementById("activeLevelBadge").innerText = `Level ${currentLevel}`;
+
+      score = 0;
+      currentQuestionIndex = 0;
+
+      generateQuestions();
+      showQuestion();
+    }
+
+    function generateQuestions() {
+      const instKey = document.getElementById("instrumentSelect").value;
+      const poolKeys = INSTRUMENTS[instKey][currentLevel];
+      const instFamily = INSTRUMENTS[instKey].family;
+      
+      let validPoolKeys = poolKeys;
+
+      if (currentLevel === 3) {
+        validPoolKeys = poolKeys.filter(key => {
+          const noteObj = NOTE_LIBRARY[key];
+          return getAccidentalForNote(noteObj, KEY_SIGNATURE_MAP[instFamily][1]) === null;
+        });
+      }
+      if (validPoolKeys.length === 0) validPoolKeys = poolKeys;
+
+      let deckKeys = [];
+      while (deckKeys.length < TOTAL_QUESTIONS) {
+        let shuffleBatch = [...validPoolKeys].sort(() => Math.random() - 0.5);
+        for (let key of shuffleBatch) {
+          if (deckKeys.length >= TOTAL_QUESTIONS) break;
+          if (deckKeys.length > 0 && deckKeys[deckKeys.length - 1] === key && validPoolKeys.length > 1) {
+            continue;
+          }
+          deckKeys.push(key);
+        }
+      }
+
+      for (let i = 1; i < deckKeys.length; i++) {
+        if (deckKeys[i] === deckKeys[i - 1] && validPoolKeys.length > 1) {
+          let swapIdx = (i + 1) % deckKeys.length;
+          let temp = deckKeys[i];
+          deckKeys[i] = deckKeys[swapIdx];
+          deckKeys[swapIdx] = temp;
+        }
+      }
+
+      questions = deckKeys.map(noteKey => {
+        let keySigCode = "none";
+        if (currentLevel >= 3) {
+          const randFlats = Math.floor(Math.random() * 4);
+          keySigCode = KEY_SIGNATURE_MAP[instFamily][randFlats];
+
+          if (currentLevel === 3) {
+            let attempts = 0;
+            while (getAccidentalForNote(NOTE_LIBRARY[noteKey], keySigCode) !== null && attempts < 10) {
+              keySigCode = KEY_SIGNATURE_MAP[instFamily][Math.floor(Math.random() * 4)];
+              attempts++;
+            }
+          }
+        }
+        return {
+          note: NOTE_LIBRARY[noteKey],
+          keySig: keySigCode
+        };
+      });
+    }
+
+    // ACCIDENTAL VECTOR ARTWORK
+    function drawFlatVector(cx, cy, parent, color = "#1e293b") {
+      const g = createSvgElement("g", { transform: `translate(${cx}, ${cy})` }, parent);
+      createSvgElement("path", {
+        d: `M -3.5 -20 L -1.8 -20 L -1.8 -5.2 C 1.5 -5.2 6.0 -3.5 6.0 0 C 6.0 3.8 1.5 5.5 -1.8 5.5 L -3.5 5.5 Z M -1.8 -3.2 C 0.5 -3.2 3.8 -2.0 3.8 0 C 3.8 2.0 0.5 3.5 -1.8 3.5 Z`,
+        "fill-rule": "evenodd",
+        fill: color
+      }, g);
+    }
+
+    function drawSharpVector(cx, cy, parent, color = "#1e293b") {
+      const g = createSvgElement("g", { transform: `translate(${cx}, ${cy})` }, parent);
+      createSvgElement("rect", { x: -3.5, y: -15, width: 1.8, height: 30, fill: color }, g);
+      createSvgElement("rect", { x: 1.7, y: -15, width: 1.8, height: 30, fill: color }, g);
+      createSvgElement("polygon", { points: "-6.5,-5.0 6.5,-8.0 6.5,-5.0 -6.5,-2.0", fill: color }, g);
+      createSvgElement("polygon", { points: "-6.5,3.0 6.5,0.0 6.5,3.0 -6.5,6.0", fill: color }, g);
+    }
+
+    function drawNaturalVector(cx, cy, parent, color = "#1e293b") {
+      const g = createSvgElement("g", { transform: `translate(${cx}, ${cy})` }, parent);
+      createSvgElement("rect", { x: -4.0, y: -14.0, width: 2.0, height: 20.0, fill: color }, g);
+      createSvgElement("rect", { x: 2.0, y: -6.0, width: 2.0, height: 20.0, fill: color }, g);
+      createSvgElement("polygon", { points: "-4.0,-6.0 4.0,-8.5 4.0,-5.5 -4.0,-3.0", fill: color }, g);
+      createSvgElement("polygon", { points: "-4.0,3.0 4.0,0.5 4.0,3.5 -4.0,6.0", fill: color }, g);
+    }
+
+    // SVG STAFF RENDERING ENGINE
+    function showQuestion() {
+      if (currentQuestionIndex >= TOTAL_QUESTIONS) {
+        finishRound();
+        return;
+      }
+
+      const q = questions[currentQuestionIndex];
+      currentNoteObj = q.note;
+      currentKeySig = q.keySig;
+
+      const staffContainer = document.getElementById("staffContainer");
+      staffContainer.className = "bg-white border-4 border-sky-200 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300";
+
+      const feedbackText = document.getElementById("feedbackText");
+      feedbackText.innerText = "";
+      feedbackText.className = "h-8 font-heading text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1";
+
+      document.getElementById("questionNum").innerText = `${currentQuestionIndex + 1} / ${TOTAL_QUESTIONS}`;
+      
+      const runningPct = currentQuestionIndex === 0 ? 100 : Math.round((score / currentQuestionIndex) * 100);
+      document.getElementById("scoreDisplay").innerText = `${runningPct}%`;
+
+      const pctProgress = Math.round(((currentQuestionIndex) / TOTAL_QUESTIONS) * 100);
+      document.getElementById("progressBarFill").style.width = `${pctProgress}%`;
+
+      renderStaff(currentNoteObj, currentKeySig);
+      renderOptions(currentNoteObj);
+    }
+
+    function renderStaff(note, keySig) {
+      const svg = document.getElementById("staffSvg");
+      svg.innerHTML = "";
+
+      const selectedInstKey = document.getElementById("instrumentSelect").value;
+      const instClef = INSTRUMENTS[selectedInstKey].clef;
+      const isTreble = instClef === "treble";
+
+      const noteY = isTreble ? (160 - note.step * 10) : (40 - note.step * 10);
+      const noteX = 240;
+
+      for (let i = 0; i < 5; i++) {
+        const lineY = 60 + i * 20;
+        createSvgElement("line", { x1: 20, y1: lineY, x2: 360, y2: lineY, stroke: "#334155", "stroke-width": 2 }, svg);
+      }
+
+      if (isTreble) {
+        createSvgElement("text", { x: 30, y: 135, "font-size": "82", "font-family": "serif", fill: "#1e293b" }, svg, "𝄞");
+      } else {
+        createSvgElement("text", { x: 30, y: 110, "font-size": "70", "font-family": "serif", fill: "#1e293b" }, svg, "𝄢");
+      }
+
+      renderKeySignature(keySig, isTreble, svg);
+
+      if (noteY <= 40) {
+        for (let ly = 40; ly >= noteY - 5; ly -= 20) {
+          createSvgElement("line", { x1: noteX - 22, y1: ly, x2: noteX + 22, y2: ly, stroke: "#334155", "stroke-width": 2.5 }, svg);
+        }
+      } else if (noteY >= 160) {
+        for (let ly = 160; ly <= noteY + 5; ly += 20) {
+          createSvgElement("line", { x1: noteX - 22, y1: ly, x2: noteX + 22, y2: ly, stroke: "#334155", "stroke-width": 2.5 }, svg);
+        }
+      }
+
+      const accidentalToDraw = getAccidentalForNote(note, keySig);
+      if (accidentalToDraw === "♭") {
+        drawFlatVector(noteX - 30, noteY, svg);
+      } else if (accidentalToDraw === "♯") {
+        drawSharpVector(noteX - 30, noteY, svg);
+      } else if (accidentalToDraw === "♮") {
+        drawNaturalVector(noteX - 30, noteY, svg);
+      }
+
+      const noteGroup = createSvgElement("g", { transform: `rotate(-20 ${noteX} ${noteY})` }, svg);
+      createSvgElement("ellipse", { cx: noteX, cy: noteY, rx: 14, ry: 9.5, fill: "#0f172a" }, noteGroup);
+
+      const stemUp = noteY > 100;
+      const stemX = stemUp ? noteX + 11.5 : noteX - 11.5;
+      const stemY2 = stemUp ? noteY - 65 : noteY + 65;
+
+      createSvgElement("line", { x1: stemX, y1: noteY, x2: stemX, y2: stemY2, stroke: "#0f172a", "stroke-width": 3 }, svg);
+    }
+
+    function renderKeySignature(keySig, isTreble, svg) {
+      if (keySig === "none") return;
+
+      const flatYPositions = isTreble ? [100, 70, 110] : [120, 90, 130]; 
+      const sharpYPositions = isTreble ? [60, 90, 50] : [80, 110, 70];  
+
+      let startX = 110;
+      const stepX = 20;
+
+      if (keySig.endsWith("b")) {
+        const count = parseInt(keySig);
+        for (let i = 0; i < count; i++) {
+          drawFlatVector(startX + i * stepX, flatYPositions[i], svg, "#334155");
+        }
+      } else if (keySig.endsWith("#")) {
+        const count = parseInt(keySig);
+        for (let i = 0; i < count; i++) {
+          drawSharpVector(startX + i * stepX, sharpYPositions[i], svg, "#334155");
+        }
+      }
+    }
+
+    function getAccidentalForNote(note, keySig) {
+      const keyAccMap = {
+        "1b": { "B": "b" },
+        "2b": { "B": "b", "E": "b" },
+        "3b": { "B": "b", "E": "b", "A": "b" },
+        "1#": { "F": "#" },
+        "2#": { "F": "#", "C": "#" },
+        "3#": { "F": "#", "C": "#", "G": "#" }
+      };
+
+      const activeKeyAccs = keyAccMap[keySig] || {};
+      const keyDefaultAcc = activeKeyAccs[note.letter] || null;
+      const noteAcc = note.alt;
+
+      if (noteAcc === keyDefaultAcc) return null;
+      if (noteAcc === "b") return "♭";
+      if (noteAcc === "#") return "♯";
+      if (noteAcc === null && keyDefaultAcc !== null) return "♮";
+
+      return null;
+    }
+
+    function createSvgElement(tag, attrs, parent, textContent = "") {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (let key in attrs) el.setAttribute(key, attrs[key]);
+      if (textContent) el.textContent = textContent;
+      parent.appendChild(el);
+      return el;
+    }
+
+    // MULTIPLE CHOICE OPTIONS & IN-BOX FEEDBACK
+    function renderOptions(correctNote) {
+      const container = document.getElementById("optionsContainer");
+      container.innerHTML = "";
+
+      const masterPitches = ["A", "A♭", "B", "B♭", "C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♭"];
+      let optionsSet = new Set([correctNote.display]);
+
+      while (optionsSet.size < 8) {
+        let randNote = masterPitches[Math.floor(Math.random() * masterPitches.length)];
+        optionsSet.add(randNote);
+      }
+
+      let sortedOptions = Array.from(optionsSet).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+
+      sortedOptions.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "note-option-btn py-3.5 bg-sky-100 hover:bg-sky-200 text-sky-900 border-2 border-sky-300 font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow transition";
+        btn.innerText = opt;
+        btn.onclick = () => handleAnswer(opt, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(selectedDisplay, buttonEl) {
+      const staffContainer = document.getElementById("staffContainer");
+      const feedbackText = document.getElementById("feedbackText");
+      const isCorrect = selectedDisplay === currentNoteObj.display;
+
+      document.querySelectorAll("#optionsContainer button").forEach(b => b.disabled = true);
+
+      if (isCorrect) {
+        score++;
+        staffContainer.className = "bg-green-100 border-4 border-green-400 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300";
+        feedbackText.innerText = "✨ Correct! Great job!";
+        feedbackText.className = "h-8 font-heading text-xl font-bold text-green-800 flex items-center justify-center transition-all mb-1";
+        buttonEl.className = "py-3.5 bg-green-500 text-white font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow";
+      } else {
+        staffContainer.className = "bg-red-100 border-4 border-red-400 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300";
+        feedbackText.innerText = `❌ Oops! That was ${currentNoteObj.display}.`;
+        feedbackText.className = "h-8 font-heading text-xl font-bold text-red-800 flex items-center justify-center transition-all mb-1";
+        buttonEl.className = "py-3.5 bg-red-500 text-white font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow";
+      }
+
+      const runningPct = Math.round((score / (currentQuestionIndex + 1)) * 100);
+      document.getElementById("scoreDisplay").innerText = `${runningPct}%`;
+
+      setTimeout(() => {
+        currentQuestionIndex++;
+        showQuestion();
+      }, 1800);
+    }
+
+    // ROUND COMPLETION, PROGRESSIVE CELEBRATION & FORM SUBMISSION
+    function finishRound() {
+      document.getElementById("quiz-section").classList.add("hidden");
+      document.getElementById("results-section").classList.remove("hidden");
+
+      const percent = Math.round((score / TOTAL_QUESTIONS) * 100);
+      document.getElementById("finalPercent").innerText = `${percent}%`;
+      document.getElementById("finalFraction").innerText = `${score} out of ${TOTAL_QUESTIONS} correct`;
+
+      const resultsCard = document.getElementById("resultsCard");
+      const resultsTitle = document.getElementById("resultsTitle");
+      const resultsSubtext = document.getElementById("resultsSubtext");
+      const resultsBadge = document.getElementById("resultsBadge");
+      const unlockMsg = document.getElementById("unlockMessage");
+
+      const restartBtn = document.getElementById("restartBtn");
+      const nextBtn = document.getElementById("nextLevelBtn");
+      const startOverBtn = document.getElementById("startOverBtn");
+
+      // Reset Button Displays
+      restartBtn.classList.add("hidden");
+      nextBtn.classList.add("hidden");
+      startOverBtn.classList.add("hidden");
+      unlockMsg.classList.remove("hidden");
+
+      if (percent >= 80) {
+        if (currentLevel < 4) {
+          maxUnlockedLevel = Math.max(maxUnlockedLevel, currentLevel + 1);
+          const btnNext = document.getElementById(`btnLvl${currentLevel + 1}`);
+          btnNext.disabled = false;
+          btnNext.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer shadow-sm";
+          
+          nextBtn.classList.remove("hidden");
+          nextBtn.innerText = `🚀 Advance to Level ${currentLevel + 1}`;
+        }
+
+        if (currentLevel === 1) {
+          resultsTitle.innerText = "⭐ Level 1 Complete! ⭐";
+          resultsSubtext.innerText = "Awesome start! You've got the basics down.";
+          resultsBadge.innerText = "🥉";
+          resultsCard.className = "bg-gradient-to-b from-sky-50 via-green-50 to-emerald-100 border-4 border-green-300 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-lg";
+          unlockMsg.className = "text-green-700 font-bold font-heading text-lg pt-1";
+          unlockMsg.innerText = "Level 2 is now unlocked!";
+
+          confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
+        } else if (currentLevel === 2) {
+          resultsTitle.innerText = "🌟 Level 2 Mastered! 🌟";
+          resultsSubtext.innerText = "Fantastic job! Your note-reading is getting fast!";
+          resultsBadge.innerText = "🥈";
+          resultsCard.className = "bg-gradient-to-b from-emerald-50 via-teal-100 to-cyan-100 border-4 border-teal-400 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-xl";
+          unlockMsg.className = "text-teal-800 font-bold font-heading text-lg pt-1";
+          unlockMsg.innerText = "Level 3 unlocked! Time to tackle key signatures!";
+
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        } else if (currentLevel === 3) {
+          resultsTitle.innerText = "🔥 Level 3 Crushed! 🔥";
+          resultsSubtext.innerText = "Incredible! Key signatures are no match for you!";
+          resultsBadge.innerText = "🥇";
+          resultsCard.className = "bg-gradient-to-b from-yellow-100 via-amber-100 to-orange-100 border-4 border-amber-400 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-2xl";
+          unlockMsg.className = "text-amber-800 font-bold font-heading text-lg pt-1";
+          unlockMsg.innerText = "Level 4 unlocked! The ultimate challenge!";
+
+          confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+        } else if (currentLevel === 4) {
+          resultsTitle.innerText = "🏆 GRAND MASTER OF MUSIC! 🏆";
+          resultsSubtext.innerText = "YOU BEAT ALL 4 LEVELS! You are an absolute sight-reading legend!";
+          resultsBadge.innerText = "👑🎷🎺⭐🏆";
+          resultsCard.className = "bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-200 border-4 border-yellow-400 rounded-3xl p-8 max-w-md mx-auto space-y-4 shadow-2xl animate-celebrate";
+          unlockMsg.className = "text-purple-900 font-bold font-heading text-xl pt-2";
+          unlockMsg.innerText = "🎉 All Levels Completed! Feel free to start over anytime.";
+
+          startOverBtn.classList.remove("hidden");
+
+          launchGrandFireworks();
+        }
+
+      } else {
+        restartBtn.classList.remove("hidden");
+        resultsTitle.innerText = "Keep Practicing! 💪";
+        resultsSubtext.innerText = "You need 80% to unlock the next level.";
+        resultsBadge.innerText = "🎵";
+        resultsCard.className = "bg-slate-50 border-4 border-slate-300 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-inner";
+        unlockMsg.className = "text-slate-600 font-bold font-heading text-base pt-1";
+        unlockMsg.innerText = "You can do it! Give it another try!";
+      }
+
+      saveScoreToStorage(percent);
+      autoPostToGoogleForm(percent);
+    }
+
+    function launchGrandFireworks() {
+      const duration = 3.5 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 60 * (timeLeft / duration);
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.4), y: Math.random() - 0.2 } }));
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.6, 0.9), y: Math.random() - 0.2 } }));
+      }, 250);
+    }
+
+    function restartRound() {
+      startQuiz();
+    }
+
+    function nextLevel() {
+      if (currentLevel < 4) {
+        selectLevel(currentLevel + 1);
+        startQuiz();
+      }
+    }
+
+    function startOverFromBeginning() {
+      document.getElementById("appHeader").classList.remove("hidden");
+      document.getElementById("results-section").classList.add("hidden");
+      document.getElementById("step1-section").classList.remove("hidden");
+      selectLevel(1);
+    }
+
+    function saveScoreToStorage(percent) {
+      const logs = JSON.parse(localStorage.getItem("bandNoteLogs") || "[]");
+      logs.push({
+        timestamp: new Date().toLocaleString(),
+        email: document.getElementById("studentEmail").value,
+        instrument: document.getElementById("instrumentSelect").value,
+        level: currentLevel,
+        score: percent
+      });
+      localStorage.setItem("bandNoteLogs", JSON.stringify(logs));
+    }
+
+    function autoPostToGoogleForm(percent) {
+      const formUrl = DEFAULT_FORM_CONFIG.formUrl;
+
+      const params = new URLSearchParams();
+      params.append(DEFAULT_FORM_CONFIG.entryName, document.getElementById("studentEmail").value);
+      params.append(DEFAULT_FORM_CONFIG.entryInst, document.getElementById("instrumentSelect").value);
+      params.append(DEFAULT_FORM_CONFIG.entryLevel, `Level ${currentLevel}`);
+      params.append(DEFAULT_FORM_CONFIG.entryScore, `${percent}%`);
+
+      fetch(formUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params.toString()
+      }).catch(err => console.error("Form submission error:", err));
+    }
+  </script>
+</body>
+</html>
