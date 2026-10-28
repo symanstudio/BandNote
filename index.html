@@ -478,23 +478,57 @@
       if (validPoolKeys.length === 0) validPoolKeys = poolKeys;
 
       let deckKeys = [];
-      while (deckKeys.length < TOTAL_QUESTIONS) {
-        let shuffleBatch = [...validPoolKeys].sort(() => Math.random() - 0.5);
-        for (let key of shuffleBatch) {
-          if (deckKeys.length >= TOTAL_QUESTIONS) break;
-          if (deckKeys.length > 0 && deckKeys[deckKeys.length - 1] === key && validPoolKeys.length > 1) {
-            continue;
+
+      // GUARANTEE AT LEAST 4 SHARP OR FLAT QUESTIONS IN LEVEL 3 AND LEVEL 4
+      if (currentLevel === 3 || currentLevel === 4) {
+        const accidentalKeys = validPoolKeys.filter(k => NOTE_LIBRARY[k].alt !== null);
+
+        if (accidentalKeys.length > 0) {
+          const minAccidentals = 4;
+          for (let i = 0; i < minAccidentals; i++) {
+            const randAcc = accidentalKeys[Math.floor(Math.random() * accidentalKeys.length)];
+            deckKeys.push(randAcc);
           }
-          deckKeys.push(key);
+
+          while (deckKeys.length < TOTAL_QUESTIONS) {
+            const randKey = validPoolKeys[Math.floor(Math.random() * validPoolKeys.length)];
+            deckKeys.push(randKey);
+          }
+
+          deckKeys.sort(() => Math.random() - 0.5);
+
+          for (let i = 1; i < deckKeys.length; i++) {
+            if (deckKeys[i] === deckKeys[i - 1] && validPoolKeys.length > 1) {
+              let swapIdx = (i + 1) % deckKeys.length;
+              let temp = deckKeys[i];
+              deckKeys[i] = deckKeys[swapIdx];
+              deckKeys[swapIdx] = temp;
+            }
+          }
         }
       }
 
-      for (let i = 1; i < deckKeys.length; i++) {
-        if (deckKeys[i] === deckKeys[i - 1] && validPoolKeys.length > 1) {
-          let swapIdx = (i + 1) % deckKeys.length;
-          let temp = deckKeys[i];
-          deckKeys[i] = deckKeys[swapIdx];
-          deckKeys[swapIdx] = temp;
+      // FALLBACK FOR LEVEL 1 & LEVEL 2 OR DEFAULT DECK BUILDING
+      if (deckKeys.length < TOTAL_QUESTIONS) {
+        deckKeys = [];
+        while (deckKeys.length < TOTAL_QUESTIONS) {
+          let shuffleBatch = [...validPoolKeys].sort(() => Math.random() - 0.5);
+          for (let key of shuffleBatch) {
+            if (deckKeys.length >= TOTAL_QUESTIONS) break;
+            if (deckKeys.length > 0 && deckKeys[deckKeys.length - 1] === key && validPoolKeys.length > 1) {
+              continue;
+            }
+            deckKeys.push(key);
+          }
+        }
+
+        for (let i = 1; i < deckKeys.length; i++) {
+          if (deckKeys[i] === deckKeys[i - 1] && validPoolKeys.length > 1) {
+            let swapIdx = (i + 1) % deckKeys.length;
+            let temp = deckKeys[i];
+            deckKeys[i] = deckKeys[swapIdx];
+            deckKeys[swapIdx] = temp;
+          }
         }
       }
 
@@ -673,6 +707,11 @@
 
       const masterPitches = ["A", "A♭", "B", "B♭", "C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♭"];
       let optionsSet = new Set([correctNote.display]);
+
+      // IF ANSWER IS A SHARP OR FLAT NOTE, ALWAYS INCLUDE ITS NATURAL EQUIVALENT (e.g., C for C#)
+      if (correctNote.alt !== null && correctNote.letter) {
+        optionsSet.add(correctNote.letter);
+      }
 
       while (optionsSet.size < 8) {
         let randNote = masterPitches[Math.floor(Math.random() * masterPitches.length)];
