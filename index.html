@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- VexFlow 4.2.2 Music Notation Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
   <style>
     body {
       font-family: 'Nunito', sans-serif;
@@ -40,7 +42,7 @@
 
   <div class="max-w-3xl mx-auto w-full bg-white rounded-3xl shadow-xl border-4 border-sky-200 overflow-hidden">
     
-    <!-- APP HEADER (VISIBLE ON INTRO PAGE, HIDDEN IN PLAY MODE) -->
+    <!-- APP HEADER -->
     <header id="appHeader" class="bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 p-6 text-white text-center">
       <h1 class="text-3xl sm:text-4xl font-bold tracking-wide drop-shadow-md">🎺 Band Note Challenge 🎷</h1>
       <p class="text-sky-100 mt-1 text-sm sm:text-base font-semibold">Master your notes & level up your playing!</p>
@@ -139,10 +141,10 @@
           <div id="progressBarFill" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%;"></div>
         </div>
 
-        <!-- MAIN STAFF DISPLAY BOX (DYNAMIC BG/BORDER & FEEDBACK TEXT ABOVE STAFF) -->
-        <div id="staffContainer" class="bg-white border-4 border-sky-200 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300">
-          <div id="feedbackText" class="h-8 font-heading text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1"></div>
-          <svg id="staffSvg" width="380" height="260" viewBox="0 -40 380 260" class="overflow-visible"></svg>
+        <!-- MAIN STAFF DISPLAY BOX -->
+        <div id="staffContainer" class="bg-white border-4 border-sky-200 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300">
+          <div id="feedbackText" class="h-8 font-heading text-lg sm:text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1"></div>
+          <div id="vexflowOutput" class="w-full flex justify-center items-center overflow-visible"></div>
         </div>
 
         <!-- MULTIPLE CHOICE BUTTONS (8 ALPHABETICAL OPTIONS) -->
@@ -165,23 +167,23 @@
           <div id="unlockMessage" class="text-green-600 font-bold font-heading text-lg pt-2 hidden"></div>
         </div>
 
-        <!-- STRICT ACTION BUTTONS CONTAINER -->
+        <!-- ACTION BUTTONS -->
         <div class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-          <!-- TRY AGAIN (ONLY SHOWN IF FAILED) -->
           <button id="restartBtn" onclick="restartRound()" class="hidden flex-1 py-4 bg-blue-500 hover:bg-blue-600 text-white font-heading text-xl rounded-2xl shadow-lg transition">
             🔄 Try Again
           </button>
           
-          <!-- ADVANCE LEVEL (ONLY SHOWN IF PASSED L1, L2, L3) -->
           <button id="nextLevelBtn" onclick="nextLevel()" class="hidden flex-1 py-4 bg-green-500 hover:bg-green-600 text-white font-heading text-xl rounded-2xl shadow-lg transition">
             🚀 Advance to Next Level
           </button>
 
-          <!-- START OVER FROM BEGINNING (ONLY SHOWN IF PASSED LEVEL 4) -->
           <button id="startOverBtn" onclick="startOverFromBeginning()" class="hidden flex-1 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-heading text-xl rounded-2xl shadow-xl transition transform hover:scale-105">
             👑 Start Over from Level 1
           </button>
         </div>
+
+        <!-- LEVEL DESCRIPTION UNDERNEATH ACTION BUTTONS -->
+        <div id="resultsLevelDescription" class="max-w-md mx-auto text-xs sm:text-sm text-slate-600 bg-white p-3.5 rounded-2xl border-2 border-sky-200 font-semibold shadow-sm"></div>
       </section>
 
     </main>
@@ -273,6 +275,16 @@
       "Bb_INST":  { 0: "1#",   1: "none", 2: "1b", 3: "2b" },
       "Eb_INST":  { 0: "2#",   1: "1#", 2: "none", 3: "1b" },
       "F_INST":   { 0: "1#",   1: "none", 2: "1b", 3: "2b" }
+    };
+
+    const VEX_KEY_SIG_MAP = {
+      "none": "C",
+      "1b": "F",
+      "2b": "Bb",
+      "3b": "Eb",
+      "1#": "G",
+      "2#": "D",
+      "3#": "A"
     };
 
     const INSTRUMENTS = {
@@ -421,7 +433,7 @@
         if (i === currentLevel) {
           btn.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-blue-500 bg-blue-100 text-blue-900 shadow-md";
         } else if (i <= maxUnlockedLevel) {
-          btn.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-50 text-green-800 hover:bg-green-100";
+          btn.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-50 text-green-800 hover:bg-green-200";
         }
       }
       updateLevelDescription();
@@ -507,137 +519,6 @@
       });
     }
 
-    // ACCIDENTAL VECTOR ARTWORK
-    function drawFlatVector(cx, cy, parent, color = "#1e293b") {
-      const g = createSvgElement("g", { transform: `translate(${cx}, ${cy})` }, parent);
-      createSvgElement("path", {
-        d: `M -3.5 -20 L -1.8 -20 L -1.8 -5.2 C 1.5 -5.2 6.0 -3.5 6.0 0 C 6.0 3.8 1.5 5.5 -1.8 5.5 L -3.5 5.5 Z M -1.8 -3.2 C 0.5 -3.2 3.8 -2.0 3.8 0 C 3.8 2.0 0.5 3.5 -1.8 3.5 Z`,
-        "fill-rule": "evenodd",
-        fill: color
-      }, g);
-    }
-
-    function drawSharpVector(cx, cy, parent, color = "#1e293b") {
-      const g = createSvgElement("g", { transform: `translate(${cx}, ${cy})` }, parent);
-      createSvgElement("rect", { x: -3.5, y: -15, width: 1.8, height: 30, fill: color }, g);
-      createSvgElement("rect", { x: 1.7, y: -15, width: 1.8, height: 30, fill: color }, g);
-      createSvgElement("polygon", { points: "-6.5,-5.0 6.5,-8.0 6.5,-5.0 -6.5,-2.0", fill: color }, g);
-      createSvgElement("polygon", { points: "-6.5,3.0 6.5,0.0 6.5,3.0 -6.5,6.0", fill: color }, g);
-    }
-
-    function drawNaturalVector(cx, cy, parent, color = "#1e293b") {
-      const g = createSvgElement("g", { transform: `translate(${cx}, ${cy})` }, parent);
-      createSvgElement("rect", { x: -4.0, y: -14.0, width: 2.0, height: 20.0, fill: color }, g);
-      createSvgElement("rect", { x: 2.0, y: -6.0, width: 2.0, height: 20.0, fill: color }, g);
-      createSvgElement("polygon", { points: "-4.0,-6.0 4.0,-8.5 4.0,-5.5 -4.0,-3.0", fill: color }, g);
-      createSvgElement("polygon", { points: "-4.0,3.0 4.0,0.5 4.0,3.5 -4.0,6.0", fill: color }, g);
-    }
-
-    // SVG STAFF RENDERING ENGINE
-    function showQuestion() {
-      if (currentQuestionIndex >= TOTAL_QUESTIONS) {
-        finishRound();
-        return;
-      }
-
-      const q = questions[currentQuestionIndex];
-      currentNoteObj = q.note;
-      currentKeySig = q.keySig;
-
-      const staffContainer = document.getElementById("staffContainer");
-      staffContainer.className = "bg-white border-4 border-sky-200 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300";
-
-      const feedbackText = document.getElementById("feedbackText");
-      feedbackText.innerText = "";
-      feedbackText.className = "h-8 font-heading text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1";
-
-      document.getElementById("questionNum").innerText = `${currentQuestionIndex + 1} / ${TOTAL_QUESTIONS}`;
-      
-      const runningPct = currentQuestionIndex === 0 ? 100 : Math.round((score / currentQuestionIndex) * 100);
-      document.getElementById("scoreDisplay").innerText = `${runningPct}%`;
-
-      const pctProgress = Math.round(((currentQuestionIndex) / TOTAL_QUESTIONS) * 100);
-      document.getElementById("progressBarFill").style.width = `${pctProgress}%`;
-
-      renderStaff(currentNoteObj, currentKeySig);
-      renderOptions(currentNoteObj);
-    }
-
-    function renderStaff(note, keySig) {
-      const svg = document.getElementById("staffSvg");
-      svg.innerHTML = "";
-
-      const selectedInstKey = document.getElementById("instrumentSelect").value;
-      const instClef = INSTRUMENTS[selectedInstKey].clef;
-      const isTreble = instClef === "treble";
-
-      const noteY = isTreble ? (160 - note.step * 10) : (40 - note.step * 10);
-      const noteX = 240;
-
-      for (let i = 0; i < 5; i++) {
-        const lineY = 60 + i * 20;
-        createSvgElement("line", { x1: 20, y1: lineY, x2: 360, y2: lineY, stroke: "#334155", "stroke-width": 2 }, svg);
-      }
-
-      if (isTreble) {
-        createSvgElement("text", { x: 30, y: 135, "font-size": "82", "font-family": "serif", fill: "#1e293b" }, svg, "𝄞");
-      } else {
-        createSvgElement("text", { x: 30, y: 110, "font-size": "70", "font-family": "serif", fill: "#1e293b" }, svg, "𝄢");
-      }
-
-      renderKeySignature(keySig, isTreble, svg);
-
-      if (noteY <= 40) {
-        for (let ly = 40; ly >= noteY - 5; ly -= 20) {
-          createSvgElement("line", { x1: noteX - 22, y1: ly, x2: noteX + 22, y2: ly, stroke: "#334155", "stroke-width": 2.5 }, svg);
-        }
-      } else if (noteY >= 160) {
-        for (let ly = 160; ly <= noteY + 5; ly += 20) {
-          createSvgElement("line", { x1: noteX - 22, y1: ly, x2: noteX + 22, y2: ly, stroke: "#334155", "stroke-width": 2.5 }, svg);
-        }
-      }
-
-      const accidentalToDraw = getAccidentalForNote(note, keySig);
-      if (accidentalToDraw === "♭") {
-        drawFlatVector(noteX - 30, noteY, svg);
-      } else if (accidentalToDraw === "♯") {
-        drawSharpVector(noteX - 30, noteY, svg);
-      } else if (accidentalToDraw === "♮") {
-        drawNaturalVector(noteX - 30, noteY, svg);
-      }
-
-      const noteGroup = createSvgElement("g", { transform: `rotate(-20 ${noteX} ${noteY})` }, svg);
-      createSvgElement("ellipse", { cx: noteX, cy: noteY, rx: 14, ry: 9.5, fill: "#0f172a" }, noteGroup);
-
-      const stemUp = noteY > 100;
-      const stemX = stemUp ? noteX + 11.5 : noteX - 11.5;
-      const stemY2 = stemUp ? noteY - 65 : noteY + 65;
-
-      createSvgElement("line", { x1: stemX, y1: noteY, x2: stemX, y2: stemY2, stroke: "#0f172a", "stroke-width": 3 }, svg);
-    }
-
-    function renderKeySignature(keySig, isTreble, svg) {
-      if (keySig === "none") return;
-
-      const flatYPositions = isTreble ? [100, 70, 110] : [120, 90, 130]; 
-      const sharpYPositions = isTreble ? [60, 90, 50] : [80, 110, 70];  
-
-      let startX = 110;
-      const stepX = 20;
-
-      if (keySig.endsWith("b")) {
-        const count = parseInt(keySig);
-        for (let i = 0; i < count; i++) {
-          drawFlatVector(startX + i * stepX, flatYPositions[i], svg, "#334155");
-        }
-      } else if (keySig.endsWith("#")) {
-        const count = parseInt(keySig);
-        for (let i = 0; i < count; i++) {
-          drawSharpVector(startX + i * stepX, sharpYPositions[i], svg, "#334155");
-        }
-      }
-    }
-
     function getAccidentalForNote(note, keySig) {
       const keyAccMap = {
         "1b": { "B": "b" },
@@ -660,12 +541,129 @@
       return null;
     }
 
-    function createSvgElement(tag, attrs, parent, textContent = "") {
-      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-      for (let key in attrs) el.setAttribute(key, attrs[key]);
-      if (textContent) el.textContent = textContent;
-      parent.appendChild(el);
-      return el;
+    // =========================================================================
+    // VEXFLOW ENGINE (ENLARGED NOTATION BY 25% MORE -> 1.5x SCALE)
+    // =========================================================================
+
+    function showQuestion() {
+      if (currentQuestionIndex >= TOTAL_QUESTIONS) {
+        finishRound();
+        return;
+      }
+
+      const q = questions[currentQuestionIndex];
+      currentNoteObj = q.note;
+      currentKeySig = q.keySig;
+
+      const staffContainer = document.getElementById("staffContainer");
+      staffContainer.className = "bg-white border-4 border-sky-200 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300";
+
+      const feedbackText = document.getElementById("feedbackText");
+      feedbackText.innerText = "";
+      feedbackText.className = "h-8 font-heading text-lg sm:text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1";
+
+      document.getElementById("questionNum").innerText = `${currentQuestionIndex + 1} / ${TOTAL_QUESTIONS}`;
+      
+      const runningPct = currentQuestionIndex === 0 ? 100 : Math.round((score / currentQuestionIndex) * 100);
+      document.getElementById("scoreDisplay").innerText = `${runningPct}%`;
+
+      const pctProgress = Math.round(((currentQuestionIndex) / TOTAL_QUESTIONS) * 100);
+      document.getElementById("progressBarFill").style.width = `${pctProgress}%`;
+
+      try {
+        renderVexFlowStaff(currentNoteObj, currentKeySig);
+      } catch (err) {
+        console.error("VexFlow Render Error:", err);
+      }
+
+      renderOptions(currentNoteObj);
+    }
+
+    function renderVexFlowStaff(note, keySig) {
+      const outputDiv = document.getElementById("vexflowOutput");
+      outputDiv.innerHTML = "";
+
+      // Safe global namespace fallback for VexFlow (Vex.Flow or VexFlow.Flow)
+      const VF = (typeof Vex !== 'undefined' && Vex.Flow) ? Vex.Flow : (typeof VexFlow !== 'undefined' ? (VexFlow.Flow || VexFlow) : null);
+
+      if (!VF) {
+        outputDiv.innerHTML = "<p class='text-red-500 font-bold p-4'>Error loading music engine. Please check connection.</p>";
+        return;
+      }
+
+      const { Renderer, Stave, StaveNote, Accidental, Formatter, Voice } = VF;
+
+      const selectedInstKey = document.getElementById("instrumentSelect").value;
+      const instClef = INSTRUMENTS[selectedInstKey].clef;
+      const isTreble = instClef === "treble";
+
+      // SVG Renderer setup
+      const renderer = new Renderer(outputDiv, Renderer.Backends.SVG);
+      renderer.resize(320, 210);
+      const context = renderer.getContext();
+
+      // SCALE UP NOTATION BY 25% MORE (1.5x total scale)
+      context.scale(1.5, 1.5);
+
+      // SHORT & COMPACT MEASURE
+      const stave = new Stave(10, 10, 190);
+      stave.addClef(instClef);
+
+      // 1. LEFT-ALIGNED KEY SIGNATURE (Stays on staff next to clef)
+      if (keySig !== "none") {
+        const vexKeySigSpec = VEX_KEY_SIG_MAP[keySig];
+        if (vexKeySigSpec) {
+          stave.addKeySignature(vexKeySigSpec);
+        }
+      }
+
+      stave.setContext(context).draw();
+
+      // FORMAT NOTE SPECIFICATION (e.g. "bb/4", "f#/5", "c/4")
+      let pitchStr = note.letter.toLowerCase();
+      if (note.alt === "b") pitchStr += "b";
+      else if (note.alt === "#") pitchStr += "#";
+
+      const octaveStr = note.name.replace(/[^0-9]/g, '');
+      const vexKeySpec = `${pitchStr}/${octaveStr}`;
+
+      // DETERMINE STEM DIRECTION:
+      // Treble Clef Middle Line = B4 (step 6). Bass Clef Middle Line = D3 (step -6).
+      const middleLineStep = isTreble ? 6 : -6;
+      const stemDir = note.step >= middleLineStep ? -1 : 1;
+
+      const staveNote = new StaveNote({
+        keys: [vexKeySpec],
+        duration: "q",
+        clef: instClef
+      });
+
+      staveNote.setStemDirection(stemDir);
+
+      // 2. ACCIDENTAL ATTACHED DIRECTLY TO THE NOTEHEAD
+      const accNeeded = getAccidentalForNote(note, keySig);
+      if (accNeeded === "♭") {
+        staveNote.addModifier(new Accidental("b"));
+      } else if (accNeeded === "♯") {
+        staveNote.addModifier(new Accidental("#"));
+      } else if (accNeeded === "♮") {
+        staveNote.addModifier(new Accidental("n"));
+      }
+
+      // 3. SHIFT STAVE NOTE START POSITION TO CENTER NOTE & ACCIDENTAL TOGETHER
+      const noteStartX = stave.getNoteStartX();
+      const noteEndX = stave.getNoteEndX();
+      const availableWidth = noteEndX - noteStartX;
+
+      // Calculate center coordinate for the notehead
+      const centerNoteX = noteStartX + (availableWidth / 2) - 10;
+      stave.setNoteStartX(centerNoteX);
+
+      // CREATE VOICE & FORMAT
+      const voice = new Voice({ num_beats: 1, beat_value: 4 }).addTickables([staveNote]);
+      new Formatter().joinVoices([voice]).format([voice], 40);
+
+      voice.draw(context, stave);
     }
 
     // MULTIPLE CHOICE OPTIONS & IN-BOX FEEDBACK
@@ -701,14 +699,14 @@
 
       if (isCorrect) {
         score++;
-        staffContainer.className = "bg-green-100 border-4 border-green-400 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300";
+        staffContainer.className = "bg-green-100 border-4 border-green-400 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300";
         feedbackText.innerText = "✨ Correct! Great job!";
-        feedbackText.className = "h-8 font-heading text-xl font-bold text-green-800 flex items-center justify-center transition-all mb-1";
+        feedbackText.className = "h-8 font-heading text-lg sm:text-xl font-bold text-green-800 flex items-center justify-center transition-all mb-1";
         buttonEl.className = "py-3.5 bg-green-500 text-white font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow";
       } else {
-        staffContainer.className = "bg-red-100 border-4 border-red-400 rounded-3xl p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] transition-all duration-300";
+        staffContainer.className = "bg-red-100 border-4 border-red-400 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300";
         feedbackText.innerText = `❌ Oops! That was ${currentNoteObj.display}.`;
-        feedbackText.className = "h-8 font-heading text-xl font-bold text-red-800 flex items-center justify-center transition-all mb-1";
+        feedbackText.className = "h-8 font-heading text-lg sm:text-xl font-bold text-red-800 flex items-center justify-center transition-all mb-1";
         buttonEl.className = "py-3.5 bg-red-500 text-white font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow";
       }
 
@@ -735,12 +733,12 @@
       const resultsSubtext = document.getElementById("resultsSubtext");
       const resultsBadge = document.getElementById("resultsBadge");
       const unlockMsg = document.getElementById("unlockMessage");
+      const resultsLevelDesc = document.getElementById("resultsLevelDescription");
 
       const restartBtn = document.getElementById("restartBtn");
       const nextBtn = document.getElementById("nextLevelBtn");
       const startOverBtn = document.getElementById("startOverBtn");
 
-      // Reset Button Displays
       restartBtn.classList.add("hidden");
       nextBtn.classList.add("hidden");
       startOverBtn.classList.add("hidden");
@@ -755,6 +753,9 @@
           
           nextBtn.classList.remove("hidden");
           nextBtn.innerText = `🚀 Advance to Level ${currentLevel + 1}`;
+          resultsLevelDesc.innerText = `Up Next: ${LEVEL_DESCRIPTIONS[currentLevel + 1]}`;
+        } else {
+          resultsLevelDesc.innerText = `Completed: ${LEVEL_DESCRIPTIONS[4]}`;
         }
 
         if (currentLevel === 1) {
@@ -779,7 +780,7 @@
           resultsTitle.innerText = "🔥 Level 3 Crushed! 🔥";
           resultsSubtext.innerText = "Incredible! Key signatures are no match for you!";
           resultsBadge.innerText = "🥇";
-          resultsCard.className = "bg-gradient-to-b from-yellow-100 via-amber-100 to-orange-100 border-4 border-amber-400 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-2xl";
+          resultsCard.className = "bg-gradient-to-b from-yellow-100 via-amber-100 to-orange-100 border-4 border-amber-400 rounded-3xl p-6 max-w-md mx-auto space-y-2 shadow-2xl";
           unlockMsg.className = "text-amber-800 font-bold font-heading text-lg pt-1";
           unlockMsg.innerText = "Level 4 unlocked! The ultimate challenge!";
 
@@ -805,6 +806,7 @@
         resultsCard.className = "bg-slate-50 border-4 border-slate-300 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-inner";
         unlockMsg.className = "text-slate-600 font-bold font-heading text-base pt-1";
         unlockMsg.innerText = "You can do it! Give it another try!";
+        resultsLevelDesc.innerText = `Current Level: ${LEVEL_DESCRIPTIONS[currentLevel]}`;
       }
 
       saveScoreToStorage(percent);
