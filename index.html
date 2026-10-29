@@ -4,57 +4,325 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Band Note Identification Challenge</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <!-- Canvas Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <!-- VexFlow 4.2.2 Music Notation Engine -->
-  <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+  
+  <!-- LOCAL OFFLINE VEXFLOW LIBRARY LINK -->
+  <!-- If using Option B, paste the full vexflow.js code between <script> and </script> below -->
+  <script id="vexflow-library" src="vexflow.js"></script>
+
   <style>
+    /* COMPREHENSIVE EMBEDDED UTILITY STYLES (100% OFFLINE) */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
-      font-family: 'Nunito', sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: #f0f9ff;
+      color: #1e293b;
+      min-height: 100vh;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
-    h1, h2, h3, .font-heading {
-      font-family: 'Fredoka', cursive;
+    .app-card {
+      max-width: 48rem;
+      width: 100%;
+      background-color: #ffffff;
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      border: 4px solid #bae6fd;
+      overflow: hidden;
+      margin: 0 auto;
     }
-    .note-option-btn {
+    .app-header {
+      background: linear-gradient(to right, #38bdf8, #3b82f6, #6366f1);
+      padding: 1.5rem;
+      color: #ffffff;
+      text-align: center;
+    }
+    .app-header h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+    }
+    .app-header p {
+      color: #e0f2fe;
+      margin-top: 0.25rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    main {
+      padding: 1.5rem;
+    }
+    .space-y-5 > * + * {
+      margin-top: 1.25rem;
+    }
+    .setup-box {
+      background-color: #f0f9ff;
+      border: 2px solid #bae6fd;
+      border-radius: 1rem;
+      padding: 1.25rem;
+    }
+    .setup-label {
+      display: block;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #0c4a6e;
+      margin-bottom: 0.5rem;
+    }
+    .flex {
+      display: flex;
+    }
+    .gap-2 {
+      gap: 0.5rem;
+    }
+    .gap-3 {
+      gap: 0.75rem;
+    }
+    .input-email {
+      font-size: 1.125rem;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      border: 2px solid #7dd3fc;
+      background-color: #ffffff;
+      width: 100%;
+      outline: none;
+    }
+    .btn-domain {
+      padding: 0 1rem;
+      background-color: #bae6fd;
+      color: #0c4a6e;
+      font-weight: 700;
+      border-radius: 0.75rem;
+      white-space: nowrap;
+      font-size: 0.875rem;
+      border: 1px solid #7dd3fc;
+      cursor: pointer;
+    }
+    .select-inst {
+      font-size: 1.125rem;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      border: 2px solid #7dd3fc;
+      background-color: #ffffff;
+      width: 100%;
+      font-weight: 600;
+    }
+    .grid-levels {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    @media (min-width: 640px) {
+      .grid-levels {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+    .btn-level {
+      padding: 0.75rem;
+      border-radius: 1rem;
+      font-weight: 700;
+      font-size: 1rem;
+      border: 4px solid;
+      cursor: pointer;
+    }
+    .btn-lvl-active {
+      border-color: #3b82f6;
+      background-color: #dbeafe;
+      color: #1e3a8a;
+    }
+    .btn-lvl-unlocked {
+      border-color: #4ade80;
+      background-color: #f0fdf4;
+      color: #166534;
+    }
+    .btn-lvl-locked {
+      border-color: #cbd5e1;
+      background-color: #f1f5f9;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+    .level-desc {
+      font-size: 0.875rem;
+      color: #475569;
+      background-color: #ffffff;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid #bae6fd;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 1rem 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      border-radius: 1rem;
+      border: none;
       transition: all 0.15s ease-in-out;
     }
-    .note-option-btn:hover {
+    .btn-primary-enabled {
+      background-color: #22c55e;
+      color: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3);
+    }
+    .btn-primary-disabled {
+      background-color: #cbd5e1;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+    .grid-status {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      background-color: #f1f5f9;
+      padding: 0.75rem;
+      border-radius: 1rem;
+      border: 2px solid #e2e8f0;
+      text-align: center;
+    }
+    @media (min-width: 640px) {
+      .grid-status {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+    .status-card {
+      background-color: #ffffff;
+      padding: 0.5rem;
+      border-radius: 0.75rem;
+      border: 1px solid #e2e8f0;
+    }
+    .status-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      display: block;
+    }
+    .status-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+      display: block;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      background-color: #e2e8f0;
+      height: 0.75rem;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background-color: #3b82f6;
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .staff-container {
+      background-color: #ffffff;
+      border: 4px solid #bae6fd;
+      border-radius: 1.5rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 280px;
+      position: relative;
+    }
+    .staff-container-correct {
+      background-color: #f0fdf4;
+      border-color: #4ade80;
+    }
+    .staff-container-wrong {
+      background-color: #fef2f2;
+      border-color: #f87171;
+    }
+    .feedback-text {
+      height: 2rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.25rem;
+    }
+    .grid-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    @media (min-width: 640px) {
+      .grid-options {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+    .note-option-btn {
+      padding: 0.875rem 0;
+      background-color: #e0f2fe;
+      color: #0c4a6e;
+      border: 2px solid #7dd3fc;
+      font-size: 1.5rem;
+      font-weight: 800;
+      border-radius: 1rem;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+    .note-option-btn:hover:not(:disabled) {
+      background-color: #bae6fd;
       transform: translateY(-2px);
     }
-    .note-option-btn:active {
-      transform: translateY(1px);
+    .btn-correct {
+      background-color: #22c55e !important;
+      color: #ffffff !important;
+      border-color: #16a34a !important;
     }
-    @keyframes subtlePulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
+    .btn-wrong {
+      background-color: #ef4444 !important;
+      color: #ffffff !important;
+      border-color: #dc2626 !important;
     }
-    .animate-celebrate {
-      animation: subtlePulse 2s infinite ease-in-out;
+    .hidden {
+      display: none !important;
+    }
+    .results-card {
+      background-color: #f0f9ff;
+      border: 4px solid #bae6fd;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      max-width: 28rem;
+      margin: 0 auto;
+      text-align: center;
+    }
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
     }
   </style>
 </head>
-<body class="min-h-screen text-slate-800 p-4 sm:p-6 flex flex-col justify-center">
+<body>
 
-  <div class="max-w-3xl mx-auto w-full bg-white rounded-3xl shadow-xl border-4 border-sky-200 overflow-hidden">
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app-card">
     
-    <!-- APP HEADER -->
-    <header id="appHeader" class="bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 p-6 text-white text-center">
-      <h1 class="text-3xl sm:text-4xl font-bold tracking-wide drop-shadow-md">🎺 Band Note Challenge 🎷</h1>
-      <p class="text-sky-100 mt-1 text-sm sm:text-base font-semibold">Master your notes & level up your playing!</p>
+    <header id="appHeader" class="app-header">
+      <h1>🎺 Band Note Challenge 🎷</h1>
+      <p>Master your notes & level up your playing!</p>
     </header>
 
-    <!-- MAIN APP CONTAINER -->
-    <main class="p-6">
+    <main>
 
-      <!-- STEP 1: STUDENT INFO & SETUP SCREEN -->
+      <!-- STEP 1: SETUP SCREEN -->
       <section id="step1-section" class="space-y-5">
-        <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-5 shadow-sm">
-          <label class="block font-heading text-lg font-bold text-sky-900 mb-2">1. Student School Email Address:</label>
+        <div class="setup-box">
+          <label class="setup-label">1. Student School Email Address:</label>
           <div class="flex gap-2">
             <input 
               type="email" 
@@ -62,20 +330,19 @@
               name="email" 
               autocomplete="email" 
               placeholder="smithj@hudsonraiders.org" 
-              class="w-full text-lg p-3 rounded-xl border-2 border-sky-300 focus:outline-none focus:border-blue-500 transition bg-white" 
+              class="input-email" 
               oninput="checkSetupReady()"
             >
-            <button type="button" onclick="appendDomain()" class="px-4 bg-sky-200 hover:bg-sky-300 text-sky-900 font-bold rounded-xl whitespace-nowrap text-sm border border-sky-300 transition">
+            <button type="button" onclick="appendDomain()" class="btn-domain">
               + @hudsonraiders.org
             </button>
           </div>
-          <p id="emailValidationMsg" class="text-xs text-amber-700 font-bold mt-1.5 hidden">⚠️ Please enter a valid email address (e.g., smithj@hudsonraiders.org)</p>
-          <p class="text-xs text-sky-700 mt-1">💡 Chromebook Tip: Tap the box once to select your school email address.</p>
+          <p id="emailValidationMsg" style="color: #b45309; font-size: 0.75rem; font-weight: 700; margin-top: 0.375rem;" class="hidden">⚠️ Please enter a valid email address (e.g., smithj@hudsonraiders.org)</p>
         </div>
 
-        <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-5 shadow-sm">
-          <label class="block font-heading text-lg font-bold text-sky-900 mb-2">2. Pick your instrument:</label>
-          <select id="instrumentSelect" onchange="checkSetupReady()" class="w-full text-lg p-3 rounded-xl border-2 border-sky-300 focus:outline-none focus:border-blue-500 transition bg-white font-semibold">
+        <div class="setup-box">
+          <label class="setup-label">2. Pick your instrument:</label>
+          <select id="instrumentSelect" onchange="checkSetupReady()" class="select-inst">
             <option value="">-- Choose Instrument --</option>
             <option value="Flute">Flute</option>
             <option value="Clarinet">Clarinet</option>
@@ -88,27 +355,26 @@
           </select>
         </div>
 
-        <!-- LEVEL SELECTOR (LEVELS 1-4) -->
-        <div id="levelSelectContainer" class="hidden space-y-3">
-          <label class="block font-heading text-lg font-bold text-sky-900">3. Select Difficulty Level:</label>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button id="btnLvl1" onclick="selectLevel(1)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-100 text-green-800 hover:bg-green-200 transition shadow-sm">
+        <div id="levelSelectContainer" class="hidden space-y-5">
+          <label class="setup-label">3. Select Difficulty Level:</label>
+          <div class="grid-levels">
+            <button id="btnLvl1" onclick="selectLevel(1)" class="btn-level btn-lvl-unlocked">
               ⭐ Level 1
             </button>
-            <button id="btnLvl2" onclick="selectLevel(2)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed" disabled>
+            <button id="btnLvl2" onclick="selectLevel(2)" class="btn-level btn-lvl-locked" disabled>
               🔒 Level 2
             </button>
-            <button id="btnLvl3" onclick="selectLevel(3)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed" disabled>
+            <button id="btnLvl3" onclick="selectLevel(3)" class="btn-level btn-lvl-locked" disabled>
               🔒 Level 3
             </button>
-            <button id="btnLvl4" onclick="selectLevel(4)" class="p-3 rounded-2xl font-heading font-bold text-base border-4 border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed" disabled>
+            <button id="btnLvl4" onclick="selectLevel(4)" class="btn-level btn-lvl-locked" disabled>
               🔒 Level 4
             </button>
           </div>
-          <div id="levelDescription" class="text-xs sm:text-sm text-slate-600 bg-white p-3 rounded-xl border border-sky-200 font-semibold shadow-inner"></div>
+          <div id="levelDescription" class="level-desc"></div>
         </div>
 
-        <button id="startBtn" onclick="startQuiz()" disabled class="w-full py-4 bg-slate-300 text-slate-500 font-heading text-xl rounded-2xl cursor-not-allowed transition">
+        <button id="startBtn" onclick="startQuiz()" disabled class="btn-primary btn-primary-disabled">
           Enter Valid Email & Select Instrument to Start
         </button>
       </section>
@@ -116,85 +382,75 @@
       <!-- STEP 2: QUIZ INTERFACE -->
       <section id="quiz-section" class="hidden space-y-5">
         
-        <!-- TOP STATUS BAR WITH INSTRUMENT & RUNNING ACCURACY SCORE (%) -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 text-center">
-          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Instrument</span>
-            <span id="activeInstBadge" class="font-heading text-base sm:text-lg font-bold text-slate-700 truncate block">Flute</span>
+        <div class="grid-status">
+          <div class="status-card">
+            <span class="status-title">Instrument</span>
+            <span id="activeInstBadge" class="status-value" style="color: #334155;">Flute</span>
           </div>
-          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Question</span>
-            <span id="questionNum" class="font-heading text-base sm:text-lg font-bold text-blue-600">1 / 15</span>
+          <div class="status-card">
+            <span class="status-title">Question</span>
+            <span id="questionNum" class="status-value" style="color: #2563eb;">1 / 15</span>
           </div>
-          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Running Score</span>
-            <span id="scoreDisplay" class="font-heading text-base sm:text-lg font-bold text-green-600">100%</span>
+          <div class="status-card">
+            <span class="status-title">Running Score</span>
+            <span id="scoreDisplay" class="status-value" style="color: #16a34a;">100%</span>
           </div>
-          <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Level</span>
-            <span id="activeLevelBadge" class="font-heading text-base sm:text-lg font-bold text-indigo-600">Level 1</span>
+          <div class="status-card">
+            <span class="status-title">Level</span>
+            <span id="activeLevelBadge" class="status-value" style="color: #4f46e5;">Level 1</span>
           </div>
         </div>
 
-        <!-- PROGRESS BAR -->
-        <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
-          <div id="progressBarFill" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%;"></div>
+        <div class="progress-bar-bg">
+          <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
         </div>
 
-        <!-- MAIN STAFF DISPLAY BOX -->
-        <div id="staffContainer" class="bg-white border-4 border-sky-200 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300">
-          <div id="feedbackText" class="h-8 font-heading text-lg sm:text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1"></div>
-          <div id="vexflowOutput" class="w-full flex justify-center items-center overflow-visible"></div>
+        <div id="staffContainer" class="staff-container">
+          <div id="feedbackText" class="feedback-text"></div>
+          <div id="vexflowOutput" style="width: 100%; display: flex; justify-content: center; align-items: center; overflow: visible;"></div>
         </div>
 
-        <!-- MULTIPLE CHOICE BUTTONS (8 ALPHABETICAL OPTIONS) -->
-        <div id="optionsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <!-- Options injected dynamically -->
-        </div>
+        <div id="optionsContainer" class="grid-options"></div>
       </section>
 
       <!-- STEP 3: RESULTS SUMMARY -->
-      <section id="results-section" class="hidden text-center space-y-6 py-4">
-        <div class="space-y-2">
-          <h2 id="resultsTitle" class="text-3xl font-bold font-heading text-slate-800">Round Complete! 🎉</h2>
-          <p id="resultsSubtext" class="text-slate-600 font-semibold text-lg">Here is how you performed:</p>
+      <section id="results-section" class="hidden space-y-5" style="text-align: center; padding: 1rem 0;">
+        <div>
+          <h2 id="resultsTitle" style="font-size: 1.875rem; font-weight: 800; color: #1e293b;">Round Complete! 🎉</h2>
+          <p id="resultsSubtext" style="color: #475569; font-weight: 600; font-size: 1.125rem; margin-top: 0.25rem;">Here is how you performed:</p>
         </div>
 
-        <div id="resultsCard" class="bg-sky-50 border-4 border-sky-200 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-inner transition-all duration-300">
-          <div id="resultsBadge" class="text-4xl"></div>
-          <div class="text-5xl font-heading font-bold text-blue-600" id="finalPercent">100%</div>
-          <div class="text-slate-600 font-bold text-lg" id="finalFraction">15 out of 15 correct</div>
-          <div id="unlockMessage" class="text-green-600 font-bold font-heading text-lg pt-2 hidden"></div>
+        <div id="resultsCard" class="results-card space-y-5">
+          <div id="resultsBadge" style="font-size: 2.5rem;"></div>
+          <div style="font-size: 3rem; font-weight: 800; color: #2563eb;" id="finalPercent">100%</div>
+          <div style="color: #475569; font-weight: 700; font-size: 1.125rem;" id="finalFraction">15 out of 15 correct</div>
+          <div id="unlockMessage" style="color: #16a34a; font-weight: 700; font-size: 1.125rem;" class="hidden"></div>
         </div>
 
-        <!-- ACTION BUTTONS -->
-        <div class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-          <button id="restartBtn" onclick="restartRound()" class="hidden flex-1 py-4 bg-blue-500 hover:bg-blue-600 text-white font-heading text-xl rounded-2xl shadow-lg transition">
+        <div class="flex gap-3" style="justify-content: center; max-width: 28rem; margin: 0 auto; flex-direction: column;">
+          <button id="restartBtn" onclick="restartRound()" class="hidden btn-primary" style="background-color: #3b82f6; color: white; cursor: pointer;">
             🔄 Try Again
           </button>
           
-          <button id="nextLevelBtn" onclick="nextLevel()" class="hidden flex-1 py-4 bg-green-500 hover:bg-green-600 text-white font-heading text-xl rounded-2xl shadow-lg transition">
+          <button id="nextLevelBtn" onclick="nextLevel()" class="hidden btn-primary" style="background-color: #22c55e; color: white; cursor: pointer;">
             🚀 Advance to Next Level
           </button>
 
-          <button id="startOverBtn" onclick="startOverFromBeginning()" class="hidden flex-1 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-heading text-xl rounded-2xl shadow-xl transition transform hover:scale-105">
+          <button id="startOverBtn" onclick="startOverFromBeginning()" class="hidden btn-primary" style="background-color: #9333ea; color: white; cursor: pointer;">
             👑 Start Over from Level 1
           </button>
         </div>
 
-        <!-- LEVEL DESCRIPTION UNDERNEATH ACTION BUTTONS -->
-        <div id="resultsLevelDescription" class="max-w-md mx-auto text-xs sm:text-sm text-slate-600 bg-white p-3.5 rounded-2xl border-2 border-sky-200 font-semibold shadow-sm"></div>
+        <div id="resultsLevelDescription" style="max-width: 28rem; margin: 0 auto;" class="level-desc"></div>
       </section>
 
     </main>
   </div>
 
-  <!-- APP LOGIC SCRIPT -->
   <script>
     const DEFAULT_SCHOOL_DOMAIN = "@hudsonraiders.org";
     const TOTAL_QUESTIONS = 15;
 
-    // HARDCODED GOOGLE FORM CONFIGURATION
     const DEFAULT_FORM_CONFIG = {
       formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSe5gQZk6fn6Wapf5B7nxIMyrFStRSIW74Hini-61GxKV3DUjg/formResponse",
       entryName: "entry.1848316150",
@@ -203,7 +459,6 @@
       entryScore: "entry.255615403"
     };
 
-    // MUSIC ENGINE DATA
     const NOTE_LIBRARY = {
       "F1":   { name: "F1",   display: "F",  letter: "F", alt: null, step: -18 },
       "G1":   { name: "G1",   display: "G",  letter: "G", alt: null, step: -17 },
@@ -413,15 +668,13 @@
 
         levelContainer.classList.remove("hidden");
         startBtn.disabled = false;
-        startBtn.classList.remove("bg-slate-300", "text-slate-500", "cursor-not-allowed");
-        startBtn.classList.add("bg-green-500", "hover:bg-green-600", "text-white", "shadow-lg");
+        startBtn.className = "btn-primary btn-primary-enabled";
         startBtn.innerText = `🚀 Start Level ${currentLevel} Challenge`;
         updateLevelDescription();
       } else {
         levelContainer.classList.add("hidden");
         startBtn.disabled = true;
-        startBtn.classList.add("bg-slate-300", "text-slate-500", "cursor-not-allowed");
-        startBtn.classList.remove("bg-green-500", "hover:bg-green-600", "text-white", "shadow-lg");
+        startBtn.className = "btn-primary btn-primary-disabled";
         startBtn.innerText = "Enter Valid Email & Select Instrument to Start";
       }
     }
@@ -433,9 +686,9 @@
       for (let i = 1; i <= 4; i++) {
         const btn = document.getElementById(`btnLvl${i}`);
         if (i === currentLevel) {
-          btn.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-blue-500 bg-blue-100 text-blue-900 shadow-md";
+          btn.className = "btn-level btn-lvl-active";
         } else if (i <= maxUnlockedLevel) {
-          btn.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-50 text-green-800 hover:bg-green-200";
+          btn.className = "btn-level btn-lvl-unlocked";
         }
       }
       updateLevelDescription();
@@ -481,7 +734,6 @@
 
       let deckKeys = [];
 
-      // GUARANTEE AT LEAST 4 SHARP OR FLAT QUESTIONS IN LEVEL 3 AND LEVEL 4
       if (currentLevel === 3 || currentLevel === 4) {
         const accidentalKeys = validPoolKeys.filter(k => NOTE_LIBRARY[k].alt !== null);
 
@@ -510,7 +762,6 @@
         }
       }
 
-      // FALLBACK FOR LEVEL 1 & LEVEL 2 OR DEFAULT DECK BUILDING
       if (deckKeys.length < TOTAL_QUESTIONS) {
         deckKeys = [];
         while (deckKeys.length < TOTAL_QUESTIONS) {
@@ -578,7 +829,7 @@
     }
 
     // =========================================================================
-    // VEXFLOW ENGINE (ENLARGED NOTATION BY 25% MORE -> 1.5x SCALE)
+    // VEXFLOW RENDERING ENGINE (ORIGINAL PUBLICATION-GRADE ENGRAVING)
     // =========================================================================
 
     function showQuestion() {
@@ -592,11 +843,11 @@
       currentKeySig = q.keySig;
 
       const staffContainer = document.getElementById("staffContainer");
-      staffContainer.className = "bg-white border-4 border-sky-200 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300";
+      staffContainer.className = "staff-container";
 
       const feedbackText = document.getElementById("feedbackText");
       feedbackText.innerText = "";
-      feedbackText.className = "h-8 font-heading text-lg sm:text-xl font-bold text-transparent flex items-center justify-center transition-all mb-1";
+      feedbackText.style.color = "transparent";
 
       document.getElementById("questionNum").innerText = `${currentQuestionIndex + 1} / ${TOTAL_QUESTIONS}`;
       
@@ -619,11 +870,10 @@
       const outputDiv = document.getElementById("vexflowOutput");
       outputDiv.innerHTML = "";
 
-      // Safe global namespace fallback for VexFlow (Vex.Flow or VexFlow.Flow)
       const VF = (typeof Vex !== 'undefined' && Vex.Flow) ? Vex.Flow : (typeof VexFlow !== 'undefined' ? (VexFlow.Flow || VexFlow) : null);
 
       if (!VF) {
-        outputDiv.innerHTML = "<p class='text-red-500 font-bold p-4'>Error loading music engine. Please check connection.</p>";
+        outputDiv.innerHTML = "<p style='color: #ef4444; font-weight: bold; padding: 1rem;'>Local 'vexflow.js' file not found. Please place 'vexflow.js' in the same folder as this HTML file.</p>";
         return;
       }
 
@@ -633,19 +883,16 @@
       const instClef = INSTRUMENTS[selectedInstKey].clef;
       const isTreble = instClef === "treble";
 
-      // SVG Renderer setup
       const renderer = new Renderer(outputDiv, Renderer.Backends.SVG);
       renderer.resize(320, 210);
       const context = renderer.getContext();
 
-      // SCALE UP NOTATION BY 25% MORE (1.5x total scale)
+      // SCALE UP NOTATION BY 25% MORE (1.5x scale)
       context.scale(1.5, 1.5);
 
-      // SHORT & COMPACT MEASURE
       const stave = new Stave(10, 10, 190);
       stave.addClef(instClef);
 
-      // 1. LEFT-ALIGNED KEY SIGNATURE (Stays on staff next to clef)
       if (keySig !== "none") {
         const vexKeySigSpec = VEX_KEY_SIG_MAP[keySig];
         if (vexKeySigSpec) {
@@ -655,7 +902,6 @@
 
       stave.setContext(context).draw();
 
-      // FORMAT NOTE SPECIFICATION (e.g. "bb/4", "f#/5", "c/4")
       let pitchStr = note.letter.toLowerCase();
       if (note.alt === "b") pitchStr += "b";
       else if (note.alt === "#") pitchStr += "#";
@@ -663,8 +909,6 @@
       const octaveStr = note.name.replace(/[^0-9]/g, '');
       const vexKeySpec = `${pitchStr}/${octaveStr}`;
 
-      // DETERMINE STEM DIRECTION:
-      // Treble Clef Middle Line = B4 (step 6). Bass Clef Middle Line = D3 (step -6).
       const middleLineStep = isTreble ? 6 : -6;
       const stemDir = note.step >= middleLineStep ? -1 : 1;
 
@@ -676,7 +920,6 @@
 
       staveNote.setStemDirection(stemDir);
 
-      // 2. ACCIDENTAL ATTACHED DIRECTLY TO THE NOTEHEAD
       const accNeeded = getAccidentalForNote(note, keySig);
       if (accNeeded === "♭") {
         staveNote.addModifier(new Accidental("b"));
@@ -686,23 +929,19 @@
         staveNote.addModifier(new Accidental("n"));
       }
 
-      // 3. SHIFT STAVE NOTE START POSITION TO CENTER NOTE & ACCIDENTAL TOGETHER
       const noteStartX = stave.getNoteStartX();
       const noteEndX = stave.getNoteEndX();
       const availableWidth = noteEndX - noteStartX;
 
-      // Calculate center coordinate for the notehead
       const centerNoteX = noteStartX + (availableWidth / 2) - 10;
       stave.setNoteStartX(centerNoteX);
 
-      // CREATE VOICE & FORMAT
       const voice = new Voice({ num_beats: 1, beat_value: 4 }).addTickables([staveNote]);
       new Formatter().joinVoices([voice]).format([voice], 40);
 
       voice.draw(context, stave);
     }
 
-    // MULTIPLE CHOICE OPTIONS & IN-BOX FEEDBACK
     function renderOptions(correctNote) {
       const container = document.getElementById("optionsContainer");
       container.innerHTML = "";
@@ -710,7 +949,6 @@
       const masterPitches = ["A", "A♭", "B", "B♭", "C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♭"];
       let optionsSet = new Set([correctNote.display]);
 
-      // IF ANSWER IS A SHARP OR FLAT NOTE, ALWAYS INCLUDE ITS NATURAL EQUIVALENT (e.g., C for C#)
       if (correctNote.alt !== null && correctNote.letter) {
         optionsSet.add(correctNote.letter);
       }
@@ -724,7 +962,7 @@
 
       sortedOptions.forEach(opt => {
         const btn = document.createElement("button");
-        btn.className = "note-option-btn py-3.5 bg-sky-100 hover:bg-sky-200 text-sky-900 border-2 border-sky-300 font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow transition";
+        btn.className = "note-option-btn";
         btn.innerText = opt;
         btn.onclick = () => handleAnswer(opt, btn);
         container.appendChild(btn);
@@ -740,15 +978,15 @@
 
       if (isCorrect) {
         score++;
-        staffContainer.className = "bg-green-100 border-4 border-green-400 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300";
+        staffContainer.className = "staff-container staff-container-correct";
         feedbackText.innerText = "✨ Correct! Great job!";
-        feedbackText.className = "h-8 font-heading text-lg sm:text-xl font-bold text-green-800 flex items-center justify-center transition-all mb-1";
-        buttonEl.className = "py-3.5 bg-green-500 text-white font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow";
+        feedbackText.style.color = "#15803d";
+        buttonEl.className = "note-option-btn btn-correct";
       } else {
-        staffContainer.className = "bg-red-100 border-4 border-red-400 rounded-3xl p-4 sm:p-5 shadow-inner flex flex-col justify-center items-center relative min-h-[280px] sm:min-h-[300px] transition-all duration-300";
+        staffContainer.className = "staff-container staff-container-wrong";
         feedbackText.innerText = `❌ Oops! That was ${currentNoteObj.display}.`;
-        feedbackText.className = "h-8 font-heading text-lg sm:text-xl font-bold text-red-800 flex items-center justify-center transition-all mb-1";
-        buttonEl.className = "py-3.5 bg-red-500 text-white font-heading text-xl sm:text-2xl rounded-2xl font-bold shadow";
+        feedbackText.style.color = "#b91c1c";
+        buttonEl.className = "note-option-btn btn-wrong";
       }
 
       const runningPct = Math.round((score / (currentQuestionIndex + 1)) * 100);
@@ -760,7 +998,6 @@
       }, 1800);
     }
 
-    // ROUND COMPLETION, PROGRESSIVE CELEBRATION & FORM SUBMISSION
     function finishRound() {
       document.getElementById("quiz-section").classList.add("hidden");
       document.getElementById("results-section").classList.remove("hidden");
@@ -769,7 +1006,6 @@
       document.getElementById("finalPercent").innerText = `${percent}%`;
       document.getElementById("finalFraction").innerText = `${score} out of ${TOTAL_QUESTIONS} correct`;
 
-      const resultsCard = document.getElementById("resultsCard");
       const resultsTitle = document.getElementById("resultsTitle");
       const resultsSubtext = document.getElementById("resultsSubtext");
       const resultsBadge = document.getElementById("resultsBadge");
@@ -790,7 +1026,7 @@
           maxUnlockedLevel = Math.max(maxUnlockedLevel, currentLevel + 1);
           const btnNext = document.getElementById(`btnLvl${currentLevel + 1}`);
           btnNext.disabled = false;
-          btnNext.className = "p-3 rounded-2xl font-heading font-bold text-base border-4 border-green-400 bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer shadow-sm";
+          btnNext.className = "btn-level btn-lvl-unlocked";
           
           nextBtn.classList.remove("hidden");
           nextBtn.innerText = `🚀 Advance to Level ${currentLevel + 1}`;
@@ -803,40 +1039,27 @@
           resultsTitle.innerText = "⭐ Level 1 Complete! ⭐";
           resultsSubtext.innerText = "Awesome start! You've got the basics down.";
           resultsBadge.innerText = "🥉";
-          resultsCard.className = "bg-gradient-to-b from-sky-50 via-green-50 to-emerald-100 border-4 border-green-300 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-lg";
-          unlockMsg.className = "text-green-700 font-bold font-heading text-lg pt-1";
           unlockMsg.innerText = "Level 2 is now unlocked!";
-
-          confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
+          launchOfflineConfetti();
         } else if (currentLevel === 2) {
           resultsTitle.innerText = "🌟 Level 2 Mastered! 🌟";
           resultsSubtext.innerText = "Fantastic job! Your note-reading is getting fast!";
           resultsBadge.innerText = "🥈";
-          resultsCard.className = "bg-gradient-to-b from-emerald-50 via-teal-100 to-cyan-100 border-4 border-teal-400 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-xl";
-          unlockMsg.className = "text-teal-800 font-bold font-heading text-lg pt-1";
           unlockMsg.innerText = "Level 3 unlocked! Time to tackle key signatures!";
-
-          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+          launchOfflineConfetti();
         } else if (currentLevel === 3) {
           resultsTitle.innerText = "🔥 Level 3 Crushed! 🔥";
           resultsSubtext.innerText = "Incredible! Key signatures are no match for you!";
           resultsBadge.innerText = "🥇";
-          resultsCard.className = "bg-gradient-to-b from-yellow-100 via-amber-100 to-orange-100 border-4 border-amber-400 rounded-3xl p-6 max-w-md mx-auto space-y-2 shadow-2xl";
-          unlockMsg.className = "text-amber-800 font-bold font-heading text-lg pt-1";
           unlockMsg.innerText = "Level 4 unlocked! The ultimate challenge!";
-
-          confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+          launchOfflineConfetti();
         } else if (currentLevel === 4) {
           resultsTitle.innerText = "🏆 GRAND MASTER OF MUSIC! 🏆";
           resultsSubtext.innerText = "YOU BEAT ALL 4 LEVELS! You are an absolute sight-reading legend!";
           resultsBadge.innerText = "👑🎷🎺⭐🏆";
-          resultsCard.className = "bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-200 border-4 border-yellow-400 rounded-3xl p-8 max-w-md mx-auto space-y-4 shadow-2xl animate-celebrate";
-          unlockMsg.className = "text-purple-900 font-bold font-heading text-xl pt-2";
           unlockMsg.innerText = "🎉 All Levels Completed! Feel free to start over anytime.";
-
           startOverBtn.classList.remove("hidden");
-
-          launchGrandFireworks();
+          launchOfflineConfetti();
         }
 
       } else {
@@ -844,8 +1067,6 @@
         resultsTitle.innerText = "Keep Practicing! 💪";
         resultsSubtext.innerText = "You need 80% to unlock the next level.";
         resultsBadge.innerText = "🎵";
-        resultsCard.className = "bg-slate-50 border-4 border-slate-300 rounded-3xl p-6 max-w-md mx-auto space-y-3 shadow-inner";
-        unlockMsg.className = "text-slate-600 font-bold font-heading text-base pt-1";
         unlockMsg.innerText = "You can do it! Give it another try!";
         resultsLevelDesc.innerText = `Current Level: ${LEVEL_DESCRIPTIONS[currentLevel]}`;
       }
@@ -854,26 +1075,53 @@
       autoPostToGoogleForm(percent);
     }
 
-    function launchGrandFireworks() {
-      const duration = 3.5 * 1000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    function launchOfflineConfetti() {
+      const canvas = document.getElementById("confettiCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-      function randomInRange(min, max) {
-        return Math.random() * (max - min) + min;
+      const particles = [];
+      const colors = ["#22c55e", "#3b82f6", "#eab308", "#ec4899", "#a855f7"];
+
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 16,
+          vy: (Math.random() - 0.8) * 16,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1
+        });
       }
 
-      const interval = setInterval(function() {
-        const timeLeft = animationEnd - Date.now();
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
 
-        if (timeLeft <= 0) {
-          return clearInterval(interval);
+        particles.forEach(p => {
+          if (p.alpha > 0) {
+            active = true;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.3;
+            p.alpha -= 0.015;
+
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+          }
+        });
+
+        if (active) {
+          requestAnimationFrame(render);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
+      }
 
-        const particleCount = 60 * (timeLeft / duration);
-        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.4), y: Math.random() - 0.2 } }));
-        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.6, 0.9), y: Math.random() - 0.2 } }));
-      }, 250);
+      render();
     }
 
     function restartRound() {
